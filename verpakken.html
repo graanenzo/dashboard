@@ -376,14 +376,14 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
           <input id="taakDatum" type="date" required>
         </label>
         <label class="veld" for="taakGewicht"><span id="taakGewichtLabel">Hoeveelheid</span>
-          <span class="kg-veld"><input id="taakGewicht" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Bijv. 5"><span>kg</span></span>
+          <span class="kg-veld"><input id="taakGewicht" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Bijv. 25"><span>kg</span></span>
         </label>
         <button class="btn ok" type="submit" id="taakKnop">Toevoegen</button>
         <datalist id="taakSuggesties"></datalist>
       </form>
       <h2 class="lijstkop">Te doen <span class="telling" id="taakTeDoenAantal"></span></h2>
       <ul class="taken" id="takenOpen"></ul>
-      <h2 class="lijstkop gedaan-kop">Gedaan <span class="telling">laatste 24 uur</span></h2>
+      <h2 class="lijstkop gedaan-kop">Gedaan <span class="telling">afgelopen week</span></h2>
       <ul class="taken" id="takenKlaar"></ul>
     </section>
     <section id="schoonmaak" hidden>
@@ -842,7 +842,7 @@ let huidigeSoort = "mengen";
 let naamVoorTaak = null;
 
 async function takenLaden() {
-  const grens = new Date(Date.now() - 24 * 3600000).toISOString();
+  const grens = new Date(Date.now() - 7 * 24 * 3600000).toISOString();
   const { data, error } = await sb.from("taken").select("*")
     .or(`klaar.eq.false,klaar_op.gte."${grens}"`)
     .order("created_at", { ascending: true });
@@ -875,7 +875,11 @@ function taakDatumTekst(iso) {
 function taakRegel(t) {
   const detail = [taakDatumTekst(t.datum), t.gewicht, t.aantal ? t.aantal + "×" : ""].filter(Boolean).join(" · ");
   const vraagNaam = !t.klaar && naamVoorTaak === t.id;
-  const wanneer = t.klaar && t.klaar_op ? new Date(t.klaar_op).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "";
+  const wanneer = t.klaar && t.klaar_op ? (() => {
+    const d = new Date(t.klaar_op);
+    const tijd = d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    return d.toDateString() === new Date().toDateString() ? tijd : d.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" }) + " " + tijd;
+  })() : "";
   return `<li class="taak ${t.klaar ? "klaar" : ""} ${vraagNaam ? "met-form" : ""}">
     <label for="t-${t.id}">
       <input type="checkbox" id="t-${t.id}" data-taak="${t.id}" ${t.klaar ? "checked" : ""}>

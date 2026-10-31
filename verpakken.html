@@ -646,6 +646,52 @@ function printPakbon(id) {
   }
 }
 
+// Rol-label: de PDF wordt in de browser omgezet naar een afbeelding en geprint vanuit een pagina
+// met @page { size: landscape }. Zo staat het printvenster van de Epson meteen op "Liggend",
+// zonder de printerinstellingen te veranderen.
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let pdfjsLaden = null;
+function laadPdfjs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (!pdfjsLaden) pdfjsLaden = new Promise((ok, mis) => {
+    const sc = document.createElement("script");
+    sc.src = PDFJS + "pdf.min.js";
+    sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(window.pdfjsLib); };
+    sc.onerror = () => { pdfjsLaden = null; mis(new Error("pdf.js laden mislukt")); };
+    document.head.appendChild(sc);
+  });
+  return pdfjsLaden;
+}
+async function labelPrintvenster(venster, blob, ordernummer) {
+  const lib = await laadPdfjs();
+  const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+  const beelden = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const pagina = await doc.getPage(i);
+    const vp = pagina.getViewport({ scale: 300 / 72 }); // 300 dpi
+    const c = document.createElement("canvas");
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    await pagina.render({ canvasContext: ctx, viewport: vp }).promise;
+    beelden.push(c.toDataURL("image/png"));
+  }
+  const d = venster.document;
+  d.open();
+  d.write(`<!doctype html><html><head><meta charset="utf-8"><title>Label #${esc(ordernummer)}</title><style>
+    @page { size: landscape; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    .pg { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; page-break-after: always; overflow: hidden; }
+    .pg:last-child { page-break-after: auto; }
+    .pg img { max-width: 100%; max-height: 100%; }
+    @media screen { .pg { height: auto; padding: 16px 0; } .pg img { max-height: 90vh; box-shadow: 0 0 0 1px #ccc; } }
+  </style></head><body>${beelden.map((u) => `<div class="pg"><img src="${u}" alt="Verzendlabel"></div>`).join("")}</body></html>`);
+  d.close();
+  await new Promise((ok) => { const imgs = [...d.images]; let n = imgs.length; if (!n) ok(); imgs.forEach((im) => (im.complete ? --n || ok() : (im.onload = im.onerror = () => --n || ok()))); });
+  venster.focus();
+  venster.print();
+}
+
 async function haalLabel(id, knop, formaat = "rol") {
   const b = bestellingen.find((x) => x.id === id);
   if (!b) return;
@@ -668,8 +714,13 @@ async function haalLabel(id, knop, formaat = "rol") {
     }
     const barcode = r.headers.get("x-barcode");
     if (barcode) b.barcode = barcode;
-    const url = URL.createObjectURL(await r.blob());
+    const blob = await r.blob();
     markeerGeprint(id, "label_geprint_op");
+    if (formaat === "rol" && venster) {
+      try { await labelPrintvenster(venster, blob, b.ordernummer); return; }
+      catch (e) { console.warn("Printvenster lukte niet, PDF wordt geopend", e); }
+    }
+    const url = URL.createObjectURL(blob);
     if (venster) venster.location.href = url; else window.location.href = url;
   } catch (e) {
     if (venster) venster.close();

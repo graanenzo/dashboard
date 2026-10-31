@@ -579,7 +579,7 @@ function bon(b) {
     </ul>
     ${!isAfhalen(b) && adresTekst(b) ? `<div class="adres"><div>${esc(adresTekst(b)).replace(/\n/g, "<br>")}</div></div>` : ""}
     ${ingepakt}
-    <div class="acties">${acties}${isAfhalen(b) ? "" : `<button class="btn stil ${b.label_geprint_op ? "gedaan" : ""}" data-actie="label" data-id="${b.id}" title="${b.label_geprint_op ? "Geprint " + geprintTekst(b.label_geprint_op) : "Nog niet geprint"}">${b.label_geprint_op ? "✓ " : ""}Verzendlabel</button><button class="btn stil" data-actie="label" data-formaat="a4" data-id="${b.id}" title="Tijdelijk: hetzelfde label op A4">Label A4</button>`}<button class="btn stil ${b.pakbon_geprint_op ? "gedaan" : ""}" data-actie="print" data-id="${b.id}" title="${b.pakbon_geprint_op ? "Geprint " + geprintTekst(b.pakbon_geprint_op) : "Nog niet geprint"}">${b.pakbon_geprint_op ? "✓ " : ""}Pakbon</button></div>
+    <div class="acties">${acties}${isAfhalen(b) ? "" : `<button class="btn stil ${b.label_geprint_op ? "gedaan" : ""}" data-actie="label" data-id="${b.id}" title="${b.label_geprint_op ? "Geprint " + geprintTekst(b.label_geprint_op) : "Nog niet geprint"}">${b.label_geprint_op ? "✓ " : ""}Verzendlabel</button>`}<button class="btn stil ${b.pakbon_geprint_op ? "gedaan" : ""}" data-actie="print" data-id="${b.id}" title="${b.pakbon_geprint_op ? "Geprint " + geprintTekst(b.pakbon_geprint_op) : "Nog niet geprint"}">${b.pakbon_geprint_op ? "✓ " : ""}Pakbon</button></div>
     ${naamForm}
   </article>`;
 }

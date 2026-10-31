@@ -1,7 +1,7 @@
 // Edge Function "myparcel-label": maakt (indien nodig) de zending aan in MyParcel, meldt hem aan bij de
 // vervoerder door het label op te vragen, slaat zending-id en barcode op en geeft het label als PDF terug.
-// Standaard voor de Epson-labelprinter: A6-label op een liggende pagina van 150 x 102 mm (doorlopende rol 102 mm).
-// Omdat de pagina zelf liggend is, kiest de browser bij het printen automatisch "liggend".
+// Standaard voor de Epson-labelprinter: A6-label op een staande pagina van 102 x 150 mm (doorlopende rol 102 mm).
+// Een liggend label wordt een kwartslag gedraaid, zodat het de rol vult en de browser automatisch "staand" kiest.
 // Met { formaat: "a4" } komt het label op A4.
 // De MyParcel API-sleutel staat als secret MYPARCEL_API_KEY in Supabase en komt nooit in de browser.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
@@ -9,7 +9,7 @@ import { PDFDocument, degrees } from "npm:pdf-lib@1.17.1";
 
 const MP = "https://api.myparcel.nl";
 const MM = 72 / 25.4;
-const ROL = { breedte: 150, hoogte: 102, marge: 2 }; // mm, liggend
+const ROL = { breedte: 102, hoogte: 150, marge: 2 }; // mm, staand
 const BEZIG = -1; // tijdelijke waarde in myparcel_zending_id terwijl de zending wordt aangemaakt
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +24,7 @@ const VERVOERDERS: Record<string, number> = { postnl: 1, bpost: 2, dpd: 4 };
 const PAKKETSOORT: Record<string, number> = { package: 1, mailbox: 2, letter: 3, digital_stamp: 4, package_small: 6 };
 const BEZORGSOORT: Record<string, number> = { morning: 1, standard: 2, evening: 3, pickup: 4, express: 5 };
 
-// Zet elk label zo groot mogelijk op een liggende pagina. Een staand label wordt een kwartslag gedraaid.
+// Zet elk label zo groot mogelijk op een staande pagina. Een liggend label wordt een kwartslag gedraaid.
 async function opRol(pdf: Uint8Array): Promise<Uint8Array> {
   const bron = await PDFDocument.load(pdf);
   const uit = await PDFDocument.create();
@@ -32,7 +32,7 @@ async function opRol(pdf: Uint8Array): Promise<Uint8Array> {
   const paginas = await uit.embedPdf(bron, bron.getPageIndices());
   for (const p of paginas) {
     const pg = uit.addPage([W, H]);
-    if (p.width >= p.height) {
+    if (p.width <= p.height) {
       const s = Math.min((W - 2 * m) / p.width, (H - 2 * m) / p.height);
       pg.drawPage(p, { x: (W - p.width * s) / 2, y: (H - p.height * s) / 2, width: p.width * s, height: p.height * s });
     } else {

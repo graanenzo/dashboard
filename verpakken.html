@@ -172,6 +172,10 @@ ul.taken { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .taak-weg { border: 0; background: transparent; color: var(--muted); font-size: 1.3rem; line-height: 1; padding: 6px 10px; border-radius: 6px; }
 .taak-weg:hover { background: var(--warn-soft); color: var(--warn); }
 .taak.bevestig .taak-weg { font-size: 0.85rem; font-weight: 700; background: var(--warn-soft); color: var(--warn); }
+.taak .taaknaam { flex-basis: 100%; padding: 8px 12px 12px; }
+.kg-veld { display: flex; align-items: center; gap: 6px; }
+.kg-veld input { flex: 1; min-width: 0; }
+.kg-veld span { font-weight: 700; color: var(--muted); }
 .taak-leeg { color: var(--muted); padding: 12px 4px; }
 
 
@@ -360,14 +364,14 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
     <section id="taken" hidden>
       <a class="terug" href="#magazijn">← Alle onderdelen</a>
       <form class="taakform" id="taakForm" autocomplete="off">
-        <label class="veld breed" for="taakProduct"><span id="taakProductLabel">Product</span>
-          <input id="taakProduct" type="text" required list="taakSuggesties" placeholder="Bijv. Speltbloem">
+        <label class="veld breed" for="taakProduct"><span id="taakProductLabel">Mengsel</span>
+          <input id="taakProduct" type="text" required list="taakSuggesties" placeholder="Bijv. Broodmix tarwe">
         </label>
-        <label class="veld" for="taakGewicht"><span id="taakGewichtLabel">Gewicht</span>
-          <input id="taakGewicht" type="text" placeholder="Bijv. 5 kg">
+        <label class="veld" for="taakDatum">Datum
+          <input id="taakDatum" type="date" required>
         </label>
-        <label class="veld smal" for="taakAantal">Aantal
-          <input id="taakAantal" type="number" min="1" step="1" inputmode="numeric" placeholder="1">
+        <label class="veld" for="taakGewicht"><span id="taakGewichtLabel">Hoeveelheid</span>
+          <span class="kg-veld"><input id="taakGewicht" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Bijv. 5"><span>kg</span></span>
         </label>
         <button class="btn ok" type="submit" id="taakKnop">Toevoegen</button>
         <datalist id="taakSuggesties"></datalist>
@@ -501,7 +505,7 @@ async function laden() {
 }
 
 function tekenen() {
-  if (document.querySelector(".naamform:not([hidden])")) { clearTimeout(tekenen.t); tekenen.t = setTimeout(tekenen, 3000); return; }
+  if (document.querySelector(".naamform:not([hidden]):not(.taaknaam)")) { clearTimeout(tekenen.t); tekenen.t = setTimeout(tekenen, 3000); return; }
   tegelsTekenen();
   const open = bestellingen.filter(isOpen);
   const klaar = bestellingen.filter(isRecentKlaar);
@@ -597,7 +601,7 @@ async function zetStatus(id, status, knop, naam = null) {
   if (error) { melding("Opslaan lukte niet: " + error.message, true); if (knop) knop.disabled = false; return; }
   const b = bestellingen.find((x) => x.id === id);
   if (b) Object.assign(b, patch);
-  document.querySelectorAll(".naamform").forEach((f) => (f.hidden = true));
+  document.querySelectorAll(".naamform:not(.taaknaam)").forEach((f) => (f.hidden = true));
   tekenen();
   melding(status === "verpakt" ? `#${b ? b.ordernummer : ""} ingepakt door ${naam}` : `#${b ? b.ordernummer : ""} staat weer bij te doen`);
 }
@@ -700,7 +704,7 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("submit", (e) => {
-  const form = e.target.closest(".naamform");
+  const form = e.target.closest(".naamform:not(.taaknaam)");
   if (!form) return;
   e.preventDefault();
   const naam = $("naam-" + form.dataset.id).value.trim();
@@ -709,7 +713,7 @@ document.addEventListener("submit", (e) => {
   zetStatus(form.dataset.id, "verpakt", form.querySelector("button[type=submit]"), naam);
 });
 
-setInterval(() => { if (!$("app").hidden && !document.querySelector(".naamform:not([hidden])")) tekenen(); }, 10 * 60 * 1000);
+setInterval(() => { if (!$("app").hidden && !document.querySelector(".naamform:not([hidden]):not(.taaknaam)")) tekenen(); }, 10 * 60 * 1000);
 
 let herlaadTimer;
 let takenTimer;
@@ -757,7 +761,6 @@ function luisteren() {
 const ONDERDELEN = [
   { id: "webbestellingen", naam: "Webbestellingen", uitleg: "Bestellingen uit de webshop inpakken", klaar: true },
   { id: "overige-bestellingen", naam: "Overige bestellingen", uitleg: "Bestellingen van vaste klanten per mail", klaar: true, overig: true },
-  { id: "afwegen", naam: "Afwegen", uitleg: "Producten afwegen en afvinken", klaar: true, taak: true },
   { id: "mengen", naam: "Mengen", uitleg: "Mengsels maken en afvinken", klaar: true, taak: true },
   { id: "winkel-inkoop", afdeling: "winkel", naam: "Inkoop", uitleg: "Inkoop voor de winkel" },
   { id: "winkel-schoonmaak", afdeling: "winkel", naam: "Schoonmaak", uitleg: "Schoonmaakrooster winkel afvinken", klaar: true, schoonmaak: true },
@@ -820,9 +823,7 @@ function route() {
   if (o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && o.id !== "webbestellingen") $("binnenkortTitel").textContent = o.naam;
   if (o && o.taak) {
     huidigeSoort = o.id;
-    $("taakProductLabel").textContent = o.id === "mengen" ? "Mengsel" : "Product";
-    $("taakProduct").placeholder = o.id === "mengen" ? "Bijv. Broodmix tarwe" : "Bijv. Speltbloem";
-    $("taakGewichtLabel").textContent = o.id === "mengen" ? "Hoeveelheid" : "Gewicht";
+    if (!$("taakDatum").value) $("taakDatum").value = vandaagIso();
     takenTekenen();
   }
   tegelsTekenen();
@@ -832,7 +833,8 @@ function route() {
 window.addEventListener("hashchange", route);
 
 let taken = [];
-let huidigeSoort = "afwegen";
+let huidigeSoort = "mengen";
+let naamVoorTaak = null;
 
 async function takenLaden() {
   const grens = new Date(Date.now() - 24 * 3600000).toISOString();
@@ -853,10 +855,23 @@ function suggestiesTekenen() {
   $("taakSuggesties").innerHTML = uniek.map((n) => `<option value="${esc(n)}"></option>`).join("");
 }
 
+function vandaagIso() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function taakDatumTekst(iso) {
+  if (!iso) return "";
+  const v = vandaagIso();
+  if (iso === v) return "vandaag";
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+}
+
 function taakRegel(t) {
-  const detail = [t.gewicht, t.aantal ? t.aantal + "×" : ""].filter(Boolean).join(" · ");
+  const detail = [taakDatumTekst(t.datum), t.gewicht, t.aantal ? t.aantal + "×" : ""].filter(Boolean).join(" · ");
+  const vraagNaam = !t.klaar && naamVoorTaak === t.id;
   const wanneer = t.klaar && t.klaar_op ? new Date(t.klaar_op).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "";
-  return `<li class="taak ${t.klaar ? "klaar" : ""}">
+  return `<li class="taak ${t.klaar ? "klaar" : ""} ${vraagNaam ? "met-form" : ""}">
     <label for="t-${t.id}">
       <input type="checkbox" id="t-${t.id}" data-taak="${t.id}" ${t.klaar ? "checked" : ""}>
       <span class="taak-tekst"><span class="taak-naam">${esc(t.product)}</span>${detail ? `<span class="taak-detail">${esc(detail)}</span>` : ""}</span>
@@ -864,11 +879,21 @@ function taakRegel(t) {
     ${t.klaar
       ? `<span class="taak-door">${t.klaar_door ? esc(t.klaar_door) + " · " : ""}${wanneer}</span>`
       : `<button type="button" class="taak-weg" data-taakweg="${t.id}" aria-label="Verwijder ${esc(t.product)}">×</button>`}
+    ${vraagNaam ? `<form class="naamform taaknaam" data-taak-id="${t.id}">
+        <label for="tn-${t.id}">Wie heeft dit gemaakt?</label>
+        <div class="naamrij">
+          <input id="tn-${t.id}" type="text" required autocomplete="off" placeholder="Je naam" value="${esc(laatsteNaam())}">
+          <button class="btn ok" type="submit">Bevestigen</button>
+          <button class="btn stil" type="button" data-taaknaam-annuleer="1">Annuleren</button>
+        </div>
+      </form>` : ""}
   </li>`;
 }
 
 function takenTekenen() {
   if ($("taken").hidden) return;
+  const actief = document.activeElement;
+  if (naamVoorTaak && actief && actief.closest && actief.closest(".taaknaam")) { clearTimeout(takenTekenen.t); takenTekenen.t = setTimeout(takenTekenen, 3000); return; }
   const open = taken.filter((t) => t.soort === huidigeSoort && !t.klaar);
   const klaar = taken.filter((t) => t.soort === huidigeSoort && t.klaar).sort((a, b) => (b.klaar_op || "").localeCompare(a.klaar_op || ""));
   $("taakTeDoenAantal").textContent = open.length ? open.length : "";
@@ -881,15 +906,15 @@ $("taakForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const product = $("taakProduct").value.trim();
   if (!product) return;
-  const aantal = parseInt($("taakAantal").value, 10);
-  const rij = { soort: huidigeSoort, product, gewicht: $("taakGewicht").value.trim() || null, aantal: Number.isFinite(aantal) && aantal > 0 ? aantal : null, aangemaakt_door: laatsteNaam() || null };
+  const kg = parseFloat(String($("taakGewicht").value).replace(",", "."));
+  const rij = { soort: huidigeSoort, product, datum: $("taakDatum").value || vandaagIso(), gewicht: Number.isFinite(kg) && kg > 0 ? String(kg).replace(".", ",") + " kg" : null, aantal: null, aangemaakt_door: laatsteNaam() || null };
   $("taakKnop").disabled = true;
   const { data, error } = await sb.from("taken").insert(rij).select().single();
   $("taakKnop").disabled = false;
   if (error) { melding("Toevoegen lukte niet: " + error.message, true); return; }
   taken.push(data);
   takenSuggesties.unshift({ product, soort: huidigeSoort });
-  $("taakProduct").value = ""; $("taakGewicht").value = ""; $("taakAantal").value = "";
+  $("taakProduct").value = ""; $("taakGewicht").value = "";
   $("taakProduct").focus();
   takenTekenen(); tegelsTekenen();
 });
@@ -899,13 +924,43 @@ document.addEventListener("change", async (e) => {
   if (!id) return;
   const t = taken.find((x) => x.id === id);
   if (!t) return;
-  const patch = e.target.checked
-    ? { klaar: true, klaar_op: new Date().toISOString(), klaar_door: laatsteNaam() || null }
-    : { klaar: false, klaar_op: null, klaar_door: null };
+  if (e.target.checked) {
+    e.target.checked = false;
+    naamVoorTaak = id;
+    takenTekenen();
+    const inp = $("tn-" + id);
+    if (inp) { inp.focus(); inp.select(); }
+    return;
+  }
+  await taakOpslaan(t, { klaar: false, klaar_op: null, klaar_door: null });
+});
+
+async function taakOpslaan(t, patch) {
+  const id = t.id;
   Object.assign(t, patch);
   takenTekenen(); tegelsTekenen();
   const { error } = await sb.from("taken").update(patch).eq("id", id);
   if (error) { melding("Opslaan lukte niet: " + error.message, true); takenLaden(); }
+}
+
+document.addEventListener("submit", async (e) => {
+  const form = e.target.closest(".taaknaam");
+  if (!form) return;
+  e.preventDefault();
+  const t = taken.find((x) => x.id === form.dataset.taakId);
+  const naam = form.querySelector("input").value.trim();
+  if (!t || !naam) { form.querySelector("input").focus(); return; }
+  try { localStorage.setItem("gz-naam", naam); } catch (err) {}
+  naamVoorTaak = null;
+  document.activeElement && document.activeElement.blur();
+  await taakOpslaan(t, { klaar: true, klaar_op: new Date().toISOString(), klaar_door: naam });
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("[data-taaknaam-annuleer]")) return;
+  naamVoorTaak = null;
+  document.activeElement && document.activeElement.blur();
+  takenTekenen();
 });
 
 document.addEventListener("click", async (e) => {

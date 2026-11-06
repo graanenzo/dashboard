@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <style>
 /* Layout: werkbank — smalle kopbalk met statustellers, daaronder een raster van bestelbonnen die je van links naar rechts afwerkt */
 :root {
@@ -294,6 +295,20 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
 .mep-form input { font: inherit; padding: 9px 11px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); width: 100%; }
 .mep-form .od-rij .btn { flex: 0 0 auto; }
 
+/* Meerdere bestellingen selecteren en printen */
+.selectiebalk { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+.selectiebalk label { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+.selectiebalk input[type=checkbox], .kies input[type=checkbox] { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; accent-color: var(--ok); }
+@media (max-width: 700px) { .selectiebalk { position: static; } .selectie-knoppen { margin-left: 0; } }
+.selectie-aantal { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.selectie-knoppen { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.selectiebalk .btn:disabled { opacity: 0.5; cursor: default; }
+.selectie-regel { flex: 1 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 0.92rem; }
+.selectie-regel span { flex: 1 1 240px; }
+.selectie-fouten { flex: 1 0 100%; margin: 0; padding: 8px 0 0 18px; border-top: 1px solid var(--line); font-size: 0.9rem; }
+.kies { display: inline-flex; vertical-align: -5px; margin-right: 10px; padding: 2px; cursor: pointer; }
+.bon.gekozen { outline: 2px solid var(--ok); outline-offset: -1px; }
+
 /* Pakbon printen */
 #pakbon { display: none; }
 @media print {
@@ -314,6 +329,8 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
   #pakbon .n { text-align: right; width: 4em; font-variant-numeric: tabular-nums; }
   #pakbon tfoot td { border-top: 1.5pt solid #000; border-bottom: 0; font-weight: 700; }
   #pakbon .pb-voet { margin-top: 18pt; font-size: 9pt; color: #444; }
+  #pakbon .pb-pagina { break-after: page; }
+  #pakbon .pb-pagina:last-child { break-after: auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -365,6 +382,7 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
     <section id="web" hidden>
       <a class="terug" href="#magazijn">← Alle onderdelen</a>
       <nav class="tabs" id="tabs" aria-label="Filter op status"></nav>
+      <div class="selectiebalk" id="selectiebalk" hidden></div>
       <div id="lijst" aria-live="polite"></div>
     </section>
     <section id="taken" hidden>
@@ -457,6 +475,11 @@ let bestellingen = [];
 let actieveTab = "open";
 try { actieveTab = localStorage.getItem("gz-tab") === "verpakt" ? "verpakt" : "open"; } catch (e) {}
 let kanaal = null;
+const geselecteerd = new Set();
+let zichtbaar = [];
+let labelBevestiging = false;
+let labelVoortgang = null;
+let labelFouten = [];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -521,6 +544,9 @@ function tekenen() {
   ).join("");
 
   const lijst = actieveTab === "verpakt" ? klaar : open;
+  zichtbaar = lijst;
+  for (const id of [...geselecteerd]) if (!lijst.some((b) => b.id === id)) geselecteerd.delete(id);
+  selectieBalk();
   if (!lijst.length) {
     const [kop, tekst] = actieveTab === "verpakt"
       ? ["Niets klaar voor verzending", "Ingepakte bestellingen staan hier nog een dag, daarna verdwijnen ze vanzelf."]
@@ -540,6 +566,35 @@ function tekenen() {
       <h2 class="dagkop">${dagKop(dag)}<span class="telling">${items.length} ${items.length === 1 ? "bestelling" : "bestellingen"}</span></h2>
       <div class="grid">${items.map(bon).join("")}</div>
     </section>`).join("");
+}
+
+const gekozenLijst = () => zichtbaar.filter((b) => geselecteerd.has(b.id));
+
+function selectieBalk() {
+  const balk = $("selectiebalk");
+  balk.hidden = !zichtbaar.length;
+  if (!zichtbaar.length) { balk.innerHTML = ""; return; }
+  const kop = document.querySelector("header.top");
+  if (kop) balk.style.top = kop.offsetHeight + 8 + "px";
+  const gekozen = gekozenLijst();
+  const labels = gekozen.filter((b) => !isAfhalen(b));
+  const nieuw = labels.filter((b) => !b.barcode).length;
+  const bezig = labelVoortgang !== null;
+  balk.innerHTML = `
+    <label><input type="checkbox" id="kiesAlles" ${gekozen.length === zichtbaar.length ? "checked" : ""}> Selecteer alles</label>
+    <span class="selectie-aantal">${gekozen.length} van ${zichtbaar.length} geselecteerd</span>
+    <div class="selectie-knoppen">
+      <button class="btn stil" type="button" data-actie="pakbonnen" ${gekozen.length && !bezig ? "" : "disabled"}>Pakbonnen printen${gekozen.length ? ` (${gekozen.length})` : ""}</button>
+      <button class="btn stil" type="button" data-actie="labels" ${labels.length && !bezig ? "" : "disabled"}>${bezig ? esc(labelVoortgang) : `Labels printen${labels.length ? ` (${labels.length})` : ""}`}</button>
+    </div>
+    ${labelBevestiging && !bezig ? `<div class="selectie-regel" role="alert">
+      <span>${nieuw === 1 ? "1 bestelling wordt" : `${nieuw} bestellingen worden`} nu aangemeld bij de vervoerder. Doe dit alleen als ze ook echt verzonden worden.</span>
+      <button class="btn ok" type="button" data-actie="labelsBevestigd">Aanmelden en printen</button>
+      <button class="btn stil" type="button" data-actie="labelsAnnuleer">Annuleren</button>
+    </div>` : ""}
+    ${labelFouten.length ? `<ul class="selectie-fouten" role="alert">${labelFouten.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}`;
+  const alles = $("kiesAlles");
+  alles.indeterminate = gekozen.length > 0 && gekozen.length < zichtbaar.length;
 }
 
 function bon(b) {
@@ -562,9 +617,9 @@ function bon(b) {
       </form>`
     : "";
 
-  return `<article class="bon ${klaar ? "s-verpakt" : "s-nieuw"}">
+  return `<article class="bon ${klaar ? "s-verpakt" : "s-nieuw"} ${geselecteerd.has(b.id) ? "gekozen" : ""}">
     <div class="bon-head">
-      <span class="nr">#${esc(b.ordernummer)}${tijd(b) ? `<span class="tijd">${tijd(b)}</span>` : ""}</span>
+      <span class="nr"><label class="kies"><input type="checkbox" data-kies="${b.id}" aria-label="Selecteer bestelling ${esc(b.ordernummer)}" ${geselecteerd.has(b.id) ? "checked" : ""}></label>#${esc(b.ordernummer)}${tijd(b) ? `<span class="tijd">${tijd(b)}</span>` : ""}</span>
       <span class="when">${b.klantnotitie ? `<span class="chip opmerking">Opmerking</span> ` : ""}${isAfhalen(b) ? `<span class="chip afhalen">Afhalen</span>` : ""}</span>
       <span class="naam">${esc(b.verzend_naam || b.klantnaam || "Onbekende klant")}</span>
     </div>
@@ -617,12 +672,10 @@ const LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeUAAAFRCAYAAABKa7UB
 const logoVooraf = new Image();
 logoVooraf.src = LOGO;
 
-function printPakbon(id) {
-  const b = bestellingen.find((x) => x.id === id);
-  if (!b) return;
+function pakbonHtml(b) {
   const totaalStuks = b.bestelregels.reduce((n, r) => n + (Number(r.aantal) || 0), 0);
   const datum = b.besteld_op ? new Date(b.besteld_op + "T12:00:00").toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }) : "";
-  $("pakbon").innerHTML = `
+  return `<div class="pb-pagina">
     <div class="pb-kop">
       ${LOGO ? `<img class="pb-logo" src="${LOGO}" alt="Graan &amp; Zo">` : `<div class="pb-merk">Graan &amp; Zo</div>`}
       <div class="pb-titel"><h1>Pakbon</h1><div>Bestelling #${esc(b.ordernummer)}</div><div>${datum} ${tijd(b)}</div></div>
@@ -634,17 +687,88 @@ function printPakbon(id) {
       <tbody>${b.bestelregels.map((r) => `<tr><td class="n">${r.aantal}</td><td>${esc(r.product)}</td></tr>`).join("")}</tbody>
       <tfoot><tr><td class="n">${totaalStuks}</td><td>Totaal aantal producten</td></tr></tfoot>
     </table>
-    ${b.verpakt_door ? `<p class="pb-voet">Ingepakt door ${esc(b.verpakt_door)}</p>` : ""}`;
-  const img = $("pakbon").querySelector("img.pb-logo");
-  const printen = () => { window.print(); markeerGeprint(id, "pakbon_geprint_op"); };
-  if (img && !img.complete) {
-    img.onload = printen;
-    img.onerror = printen;
-  } else if (img && img.decode) {
-    img.decode().then(printen, printen);
-  } else {
-    printen();
+    ${b.verpakt_door ? `<p class="pb-voet">Ingepakt door ${esc(b.verpakt_door)}</p>` : ""}
+  </div>`;
+}
+
+function printPakbonnen(lijst) {
+  if (!lijst.length) return;
+  $("pakbon").innerHTML = lijst.map(pakbonHtml).join("");
+  const printen = () => {
+    window.print();
+    lijst.forEach((b) => markeerGeprint(b.id, "pakbon_geprint_op"));
+  };
+  const wachten = [...$("pakbon").querySelectorAll("img.pb-logo")].map((img) =>
+    img.decode ? img.decode().catch(() => {}) : Promise.resolve());
+  Promise.all(wachten).then(printen);
+}
+
+function printPakbon(id) {
+  const b = bestellingen.find((x) => x.id === id);
+  if (b) printPakbonnen([b]);
+}
+
+async function labelOphalen(b, formaat = "rol") {
+  const { data } = await sb.auth.getSession();
+  const r = await fetch(SUPABASE_URL + "/functions/v1/myparcel-label", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + (data.session ? data.session.access_token : "") },
+    body: JSON.stringify({ ordernummer: b.ordernummer, formaat }),
+  });
+  if (!r.ok) {
+    let fout = "Label ophalen lukte niet (code " + r.status + ").";
+    try { fout = (await r.json()).fout || fout; } catch (e) {}
+    throw new Error(fout);
   }
+  const barcode = r.headers.get("x-barcode");
+  if (barcode) b.barcode = barcode;
+  return await r.blob();
+}
+
+// Haalt de labels één voor één op en zet ze in één PDF, zodat ze in één keer naar de labelprinter kunnen.
+async function printLabels() {
+  const lijst = gekozenLijst().filter((b) => !isAfhalen(b));
+  if (!lijst.length || labelVoortgang !== null) return;
+  labelBevestiging = false;
+  labelFouten = [];
+  // Eerst het venster openen: de browser blokkeert het als het later gebeurt. Zonder venster niets aanmelden.
+  const venster = window.open("", "_blank");
+  if (!venster) {
+    melding("De browser blokkeert het labelvenster. Sta pop-ups toe voor deze pagina en probeer het opnieuw.", true);
+    selectieBalk();
+    return;
+  }
+  venster.document.write("<p style='font-family:system-ui;padding:24px'>Verzendlabels ophalen bij MyParcel…</p>");
+  const gelukt = [];
+  for (const [i, b] of lijst.entries()) {
+    labelVoortgang = `Label ${i + 1} van ${lijst.length}…`;
+    selectieBalk();
+    try {
+      gelukt.push({ b, pdf: await labelOphalen(b) });
+    } catch (e) {
+      labelFouten.push(`#${b.ordernummer}: ${e.message || "Label ophalen lukte niet."}`);
+    }
+  }
+  labelVoortgang = null;
+  try {
+    if (!gelukt.length) throw new Error("Geen enkel label kon worden opgehaald.");
+    let pdf = gelukt[0].pdf;
+    if (gelukt.length > 1) {
+      const samen = await PDFLib.PDFDocument.create();
+      for (const { pdf: los } of gelukt) {
+        const bron = await PDFLib.PDFDocument.load(await los.arrayBuffer());
+        (await samen.copyPages(bron, bron.getPageIndices())).forEach((p) => samen.addPage(p));
+      }
+      pdf = new Blob([await samen.save()], { type: "application/pdf" });
+    }
+    venster.location.href = URL.createObjectURL(pdf);
+    gelukt.forEach(({ b }) => markeerGeprint(b.id, "label_geprint_op"));
+    melding(`${gelukt.length} ${gelukt.length === 1 ? "label" : "labels"} klaar om te printen`);
+  } catch (e) {
+    venster.close();
+    melding(e.message || "Labels samenvoegen lukte niet. Probeer het opnieuw; er worden geen dubbele zendingen gemaakt.", true);
+  }
+  tekenen();
 }
 
 async function haalLabel(id, knop, formaat = "rol") {
@@ -656,20 +780,7 @@ async function haalLabel(id, knop, formaat = "rol") {
   const oud = knop.textContent;
   knop.textContent = "Label ophalen…";
   try {
-    const { data } = await sb.auth.getSession();
-    const r = await fetch(SUPABASE_URL + "/functions/v1/myparcel-label", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + (data.session ? data.session.access_token : "") },
-      body: JSON.stringify({ ordernummer: b.ordernummer, formaat }),
-    });
-    if (!r.ok) {
-      let fout = "Label ophalen lukte niet (code " + r.status + ").";
-      try { fout = (await r.json()).fout || fout; } catch (e) {}
-      throw new Error(fout);
-    }
-    const barcode = r.headers.get("x-barcode");
-    if (barcode) b.barcode = barcode;
-    const url = URL.createObjectURL(await r.blob());
+    const url = URL.createObjectURL(await labelOphalen(b, formaat));
     markeerGeprint(id, "label_geprint_op");
     if (venster) venster.location.href = url; else window.location.href = url;
   } catch (e) {
@@ -707,6 +818,27 @@ document.addEventListener("click", (e) => {
   }
   if (el.dataset.actie === "print") printPakbon(el.dataset.id);
   if (el.dataset.actie === "label") haalLabel(el.dataset.id, el, el.dataset.formaat || "rol");
+  if (el.dataset.actie === "pakbonnen") printPakbonnen(gekozenLijst());
+  if (el.dataset.actie === "labels") {
+    const nieuw = gekozenLijst().filter((b) => !isAfhalen(b) && !b.barcode).length;
+    if (nieuw) { labelBevestiging = true; selectieBalk(); } else printLabels();
+  }
+  if (el.dataset.actie === "labelsBevestigd") printLabels();
+  if (el.dataset.actie === "labelsAnnuleer") { labelBevestiging = false; selectieBalk(); }
+});
+
+document.addEventListener("change", (e) => {
+  if (e.target.id === "kiesAlles") {
+    geselecteerd.clear();
+    if (e.target.checked) zichtbaar.forEach((b) => geselecteerd.add(b.id));
+  } else if (e.target.dataset && e.target.dataset.kies) {
+    if (e.target.checked) geselecteerd.add(e.target.dataset.kies); else geselecteerd.delete(e.target.dataset.kies);
+  } else {
+    return;
+  }
+  labelBevestiging = false;
+  labelFouten = [];
+  tekenen();
 });
 
 document.addEventListener("submit", (e) => {

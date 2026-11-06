@@ -1,5 +1,6 @@
 // Edge Function "myparcel-label": maakt (indien nodig) de zending aan in MyParcel, meldt hem aan bij de
 // vervoerder door het label op te vragen, slaat zending-id en barcode op en geeft het label als PDF terug.
+// De zending wordt met shipped_items aan de order in MyParcel gekoppeld, zodat die order op "Verwerkt" komt.
 // Standaard voor de Epson-labelprinter: A6-label op een staande pagina van 102 x 150 mm (doorlopende rol 102 mm).
 // Een liggend label wordt een kwartslag gedraaid, zodat het de rol vult en de browser automatisch "staand" kiest.
 // Met { formaat: "a4" } komt het label op A4.
@@ -100,6 +101,17 @@ Deno.serve(async (req) => {
     return ((d?.data?.shipments ?? [])[0] ?? null) as Record<string, unknown> | null;
   }
 
+  // De order die de WooCommerce-plugin in MyParcel heeft gezet
+  async function zoekOrder() {
+    const r = await fetch(`${MP}/fulfilment/orders?q=${encodeURIComponent(ordernummer)}&per_page=10`, {
+      headers: { ...mpHeaders, Authorization: "bearer " + btoa(key!), Accept: "application/json;charset=utf-8" },
+    });
+    if (r.status === 401 || r.status === 403) throw new Error("auth");
+    if (!r.ok) throw new Error("order " + r.status);
+    const d = await r.json();
+    return ((d?.data?.orders ?? []) as Array<Record<string, any>>).find((o) => String(o.external_identifier) === ordernummer) ?? null;
+  }
+
   const norm = (x: unknown) => String(x ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   const besteldVanaf = new Date(String(best.besteld_op || best.created_at).slice(0, 10) + "T00:00:00Z").getTime() - 86400000;
   const naNaBestelling = (z: Record<string, unknown>) => {
@@ -110,9 +122,29 @@ Deno.serve(async (req) => {
   // 1. Zending die we eerder voor deze bestelling hebben aangemaakt of gevonden
   let id: number | null = best.myparcel_zending_id && best.myparcel_zending_id > 0 ? Number(best.myparcel_zending_id) : null;
   let herkomst = id ? "opgeslagen" : "";
+  let order: Record<string, any> | null = null;
 
   try {
-    // 2. Zending met dit ordernummer als referentie
+    // 1b. De opgeslagen zending kan in MyParcel verwijderd of geannuleerd zijn: dan maken we hieronder een nieuwe
+    if (id) {
+      const r = await fetch(`${MP}/shipments/${id}`, { headers: { ...mpHeaders, Accept: "application/json;charset=utf-8" } });
+      if (r.status === 401 || r.status === 403) throw new Error("auth");
+      if (!r.ok && r.status !== 404) throw new Error("zending " + r.status);
+      const z = r.ok ? ((await r.json())?.data?.shipments ?? [])[0] : null;
+      if (!z || [13, 16, 17].includes(Number(z.status))) {
+        console.log("opgeslagen zending bestaat niet meer", ordernummer, id);
+        await sb.from("bestellingen").update({ myparcel_zending_id: null, myparcel_status: null, myparcel_status_op: null, barcode: null }).eq("ordernummer", ordernummer);
+        id = null;
+        herkomst = "";
+      }
+    }
+    // 2. Zending die al aan de order in MyParcel hangt
+    if (!id) {
+      order = await zoekOrder();
+      const gekoppeld = (order?.order_shipments ?? []).map((z: Record<string, any>) => Number(z.shipment_id)).filter(Boolean);
+      if (gekoppeld.length) { id = Math.max(...gekoppeld); herkomst = "order"; }
+    }
+    // 2b. Zending met dit ordernummer als referentie
     if (!id) {
       const z = (await zoek("reference_identifier=" + encodeURIComponent(ordernummer))).filter(naNaBestelling);
       if (z.length) { id = Number(z.sort((a, b) => Number(b.id) - Number(a.id))[0].id); herkomst = "referentie"; }
@@ -178,6 +210,12 @@ Deno.serve(async (req) => {
       },
       ...(gram ? { physical_properties: { weight: gram } } : {}),
     };
+    // Koppelt de zending aan de order in MyParcel; zonder open order blijft het een losse zending
+    if (order?.status === "open" && order.order_lines?.length) {
+      zending.shipped_items = order.order_lines.map((l: Record<string, any>) => ({ order_line_identifier: l.uuid, quantity: l.quantity }));
+    } else {
+      console.log("geen open order om aan te koppelen", ordernummer, order?.status ?? "niet gevonden");
+    }
     if (bezorg === 4) {
       const p = opties.pickupLocation ?? {};
       if (!p.postal_code && !p.postalCode) return json(400, { fout: `Bestelling #${ordernummer} gaat naar een afhaalpunt, maar dat punt ontbreekt. Maak dit label in MyParcel.` });

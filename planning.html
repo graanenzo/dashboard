@@ -101,6 +101,7 @@ input[type=text], input[type=password], input[type=date], input[type=time], inpu
 .klok .tekst b { font-family: var(--font-display); font-size: 1.3rem; display: block; line-height: 1.2; }
 .klok .tekst span { opacity: .8; font-size: .95rem; }
 .klok .actie { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.klok .actie .btn { color: var(--ink); }
 .klok select { width: auto; background: transparent; border-color: currentColor; color: inherit; }
 .klok select option { color: #2b2618; }
 .klokknop { background: var(--graan); color: #2b2000; border: 0; border-radius: 10px; padding: 13px 28px; font-weight: 800; font-size: 1.1rem; font-family: var(--font-display); }
@@ -344,7 +345,6 @@ let ik = null;
 let medewerkers = [];
 let weergave = "vandaag";
 let weekStart = maandag(vandaag());
-let alleDagen = opslag.get("gz-alledagen") === "1";
 let klokBezig = false;
 let verversTimer = null;
 let kanaal = null;
@@ -352,10 +352,8 @@ const urenFilter = { van: null, tot: null, afdeling: "", medewerker: "" };
 const isBeheerder = () => ik && ik.rol === "beheerder";
 const mw = (id) => medewerkers.find((m) => m.id === id);
 const naamVan = (id) => mw(id)?.naam ?? "Onbekend";
-const weekDagen = () => {
-  const dagen = [...Array(7)].map((_, i) => plus(weekStart, i));
-  return alleDagen ? dagen : dagen.filter((s) => ![0, 1].includes(vanIso(s).getDay()));
-};
+// Op maandag en zondag wordt nooit gewerkt: het rooster loopt van dinsdag (1) t/m zaterdag (5) vanaf de maandag van de week.
+const weekDagen = () => [1, 2, 3, 4, 5].map((i) => plus(weekStart, i));
 
 function melding(tekst, fout = false) {
   const el = $("melding");
@@ -410,22 +408,12 @@ function weekNavHtml() {
     <button class="btn" data-week="0">Deze week</button>
   </div>`;
 }
-function alleDagenHtml() {
-  return `<label class="check"><input type="checkbox" id="alleDagen"${alleDagen ? " checked" : ""}> Ook maandag en zondag</label>`;
-}
 $("inhoud").addEventListener("click", (e) => {
   const w = e.target.closest("[data-week]");
   if (!w) return;
   const n = Number(w.dataset.week);
   weekStart = n === 0 ? maandag(vandaag()) : plus(weekStart, n);
   ververs();
-});
-$("inhoud").addEventListener("change", (e) => {
-  if (e.target.id === "alleDagen") {
-    alleDagen = e.target.checked;
-    opslag.set("gz-alledagen", alleDagen ? "1" : "0");
-    ververs();
-  }
 });
 
 /* ---------- Vandaag ---------- */
@@ -448,22 +436,24 @@ async function tekenVandaag() {
     <div class="kop"><h1>${esc(dagLang(nu))}</h1></div>
     ${klokHtml(diensten, mijnKlok)}
     ${dagbalkHtml(diensten, status, nu)}
-    <div class="kop"><h2 style="margin-right:auto">Wie werkt er deze week</h2>${weekNavHtml()}${alleDagenHtml()}</div>
+    <div class="kop"><h2 style="margin-right:auto">Wie werkt er deze week</h2>${weekNavHtml()}</div>
     ${weekHtml(week, weekDiensten)}`;
   bindKlok();
 }
 
+let mijnKlokRijen = [];
 function klokHtml(diensten, mijnKlok) {
+  mijnKlokRijen = mijnKlok;
   const nu = vandaag();
   const vergeten = mijnKlok.filter((k) => !k.uit_tijd && k.datum < nu);
   const open = mijnKlok.find((k) => !k.uit_tijd && k.datum === nu);
   const mijn = diensten.filter((d) => d.medewerker_id === ik.id);
   const gewerkt = mijnKlok.filter((k) => k.datum === nu && k.uit_tijd);
-  const melding2 = vergeten.length ? `<div class="klok let" style="margin-bottom:12px"><div class="tekst"><b>Je bent niet uitgeklokt op ${esc(dagKort(vergeten[0].datum))}</b><span>Geef je eindtijd door aan de beheerder, die kan het aanpassen.</span></div></div>` : "";
+  const melding2 = vergeten.length ? `<div class="klok let" style="margin-bottom:12px"><div class="tekst"><b>Je bent niet uitgeklokt op ${esc(dagKort(vergeten[0].datum))}</b><span>Vul je uittijd in, dan tellen deze uren weer mee.</span></div><div class="actie"><button class="btn" type="button" data-eigen="${vergeten[0].id}">Uittijd invullen</button></div></div>` : "";
   if (open) {
     return melding2 + `<section class="klok binnen" aria-label="Klokken">
       <div class="tekst"><b>Ingeklokt om ${klokTijd(open.in_tijd)}</b><span>${esc(AFD[open.afdeling]?.naam ?? "")}</span></div>
-      <div class="actie"><button class="klokknop" id="uitKlok" type="button">Uitklokken</button></div>
+      <div class="actie"><button class="btn" type="button" data-eigen="${open.id}">Tijd aanpassen</button><button class="klokknop" id="uitKlok" type="button">Uitklokken</button></div>
     </section>`;
   }
   const rooster = mijn.map((d) => `${tijd(d.start_tijd)} tot ${tijd(d.eind_tijd)} in ${AFD[d.afdeling].naam.toLowerCase()}`).join(", ");
@@ -474,6 +464,7 @@ function klokHtml(diensten, mijnKlok) {
     <div class="tekst"><b>${esc(kop)}</b><span>${esc(rooster || "Kom je toch werken? Kies je afdeling en klok in.")}</span></div>
     <div class="actie">
       ${kies ? `<select id="klokAfd" aria-label="Afdeling">${opties.map((a) => `<option value="${a}">${AFD[a].naam}</option>`).join("")}</select>` : ""}
+      ${gewerkt.length ? `<button class="btn" type="button" data-eigen="${gewerkt[gewerkt.length - 1].id}">Tijden aanpassen</button>` : ""}
       <button class="klokknop" id="inKlok" type="button">Inklokken</button>
     </div>
   </section>`;
@@ -490,6 +481,27 @@ function bindKlok() {
     klokBezig = false;
   });
   $("uitKlok")?.addEventListener("click", openUitklokken);
+  $("inhoud").querySelectorAll("[data-eigen]").forEach((k) => k.addEventListener("click", () => {
+    eigenUrenDialoog(mijnKlokRijen.find((x) => x.id === k.dataset.eigen));
+  }));
+}
+function eigenUrenDialoog(k) {
+  const isVandaag = k.datum === vandaag();
+  openDialoog(`<form method="dialog">
+    <h2>Tijden aanpassen</h2>
+    <p class="sub2">${esc(dagLang(k.datum))}${k.afdeling ? `, ${esc(AFD[k.afdeling]?.naam.toLowerCase() ?? "")}` : ""}</p>
+    <div class="twee">
+      <label class="veld">In <input type="time" id="eIn" value="${klokTijd(k.in_tijd)}" required></label>
+      <label class="veld">Uit <input type="time" id="eUit" value="${klokTijd(k.uit_tijd)}"${isVandaag ? "" : " required"}></label>
+    </div>
+    ${isVandaag ? `<p class="sub2" style="margin:0">Laat Uit leeg als je nog aan het werk bent.</p>` : ""}
+    <label class="veld">Pauze in minuten <input type="number" id="ePauze" min="0" max="480" step="5" value="${k.pauze_minuten ?? 0}"></label>
+    <p class="sub2" style="margin:0">De beheerder ziet dat je deze tijden hebt aangepast.</p>
+    <div class="knoppen"><div class="rechts"><button class="btn" type="button" data-sluit>Annuleren</button><button class="btn primair" type="submit">Opslaan</button></div></div>
+  </form>`, async () => {
+    check(await sb.rpc("eigen_uren_aanpassen", { p_id: k.id, p_in: $("eIn").value, p_uit: $("eUit").value || null, p_pauze: Number($("ePauze").value || 0) }));
+    sluitDialoog(); melding("Tijden opgeslagen"); ververs();
+  });
 }
 async function naKlokken(tekst) {
   if (opslag.get("gz-gedeeld") === "1") {
@@ -578,7 +590,7 @@ async function tekenBeschikbaarheid() {
     <div class="kop" style="margin-bottom:12px">
       <button class="btn" id="heleWeek" type="button">Hele week beschikbaar</button>
       <button class="btn" id="vorigeWeek" type="button">Neem vorige week over</button>
-      ${alleDagenHtml()}
+      <button class="btn" id="patroonBesch" type="button">Patroon toevoegen</button>
     </div>
     <div class="dagen">${dagen.map((s) => {
       const b = per[s];
@@ -632,6 +644,7 @@ async function tekenBeschikbaarheid() {
       ververs();
     } catch (e) { melding(foutTekst(e), true); }
   });
+  $("patroonBesch").addEventListener("click", beschPatroonDialoog);
   $("vorigeWeek").addEventListener("click", async () => {
     try {
       const vorige = check(await sb.from("beschikbaarheid").select("*").eq("medewerker_id", ik.id).gte("datum", plus(weekStart, -7)).lte("datum", plus(weekStart, -1)));
@@ -640,6 +653,78 @@ async function tekenBeschikbaarheid() {
       check(await sb.from("beschikbaarheid").upsert(rijen, { onConflict: "medewerker_id,datum" }));
       ververs();
     } catch (e) { melding(foutTekst(e), true); }
+  });
+}
+
+const PATROON_MAX_DAGEN = 366;
+const PATROON_STANDAARD_DAGEN = 91;
+function patroonDatums(eerste, stap, tot) {
+  const uit = [];
+  for (let s = eerste; s <= tot; s = plus(s, stap)) uit.push(s);
+  return uit;
+}
+function controleerPatroonEinde(van, tot) {
+  if (!tot) throw new Error("Kies tot wanneer het patroon doorloopt.");
+  if (tot < van) throw new Error("De einddatum moet na de startdatum liggen.");
+  if (tot > plus(van, PATROON_MAX_DAGEN)) throw new Error("Een patroon kan maximaal een jaar vooruit.");
+}
+const nieuweId = () => crypto.randomUUID ? crypto.randomUUID()
+  : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+
+function beschPatroonDialoog() {
+  const nu = vandaag();
+  const start = weekStart > nu ? weekStart : nu;
+  openDialoog(`<form method="dialog">
+    <h2>Patroon toevoegen</h2>
+    <p class="sub2">Dagen die je al hebt ingevuld blijven staan. Losse dagen kun je daarna nog gewoon wijzigen.</p>
+    <div class="twee">
+      <label class="veld">Dag <select id="pDag">${[2, 3, 4, 5, 6].map((d) => `<option value="${d}">${esc(fmt(plus("2026-11-01", d), { weekday: "long" }))}</option>`).join("")}</select></label>
+      <label class="veld">Hoe vaak <select id="pStap"><option value="7">Elke week</option><option value="14">Om de week</option></select></label>
+    </div>
+    <label class="veld">Beschikbaarheid <select id="pStatus">
+      <option value="beschikbaar">Beschikbaar</option><option value="deels">Deels</option><option value="niet">Niet beschikbaar</option><option value="leeg">Leegmaken</option>
+    </select></label>
+    <div class="twee" id="pTijden" hidden>
+      <label class="veld">Van <input type="time" id="pVan" value="09:00"></label>
+      <label class="veld">Tot <input type="time" id="pTot" value="17:00"></label>
+    </div>
+    <div class="twee">
+      <label class="veld">Vanaf <input type="date" id="pStart" value="${start}" min="${nu}" required></label>
+      <label class="veld">Tot en met <input type="date" id="pEinde" value="${plus(start, PATROON_STANDAARD_DAGEN)}" min="${nu}" required></label>
+    </div>
+    <label class="veld" id="pOpmVeld">Opmerking <input type="text" id="pOpm" placeholder="Bijvoorbeeld studie"></label>
+    <div class="hint" id="pHint" hidden>Dit haalt alle ingevulde dagen weg die in het patroon vallen, ook losse opmerkingen.</div>
+    <div class="knoppen"><div class="rechts"><button class="btn" type="button" data-sluit>Annuleren</button><button class="btn primair" type="submit">Toevoegen</button></div></div>
+  </form>`, async () => {
+    const status = $("pStatus").value, van = $("pStart").value, tot = $("pEinde").value, dag = Number($("pDag").value);
+    controleerPatroonEinde(van, tot);
+    if (status === "deels" && $("pTot").value <= $("pVan").value) throw new Error("De eindtijd moet na de begintijd liggen.");
+    let eerste = van;
+    while (vanIso(eerste).getDay() !== dag) eerste = plus(eerste, 1);
+    const datums = patroonDatums(eerste, Number($("pStap").value), tot);
+    if (!datums.length) throw new Error("Er valt geen dag in deze periode.");
+    if (status === "leeg") {
+      check(await sb.from("beschikbaarheid").delete().eq("medewerker_id", ik.id).in("datum", datums));
+      sluitDialoog(); melding("Patroon leeggemaakt"); ververs();
+      return;
+    }
+    const bestaand = check(await sb.from("beschikbaarheid").select("datum").eq("medewerker_id", ik.id).in("datum", datums));
+    const bezet = new Set(bestaand.map((b) => b.datum));
+    const deels = status === "deels";
+    const rijen = datums.filter((s) => !bezet.has(s)).map((s) => ({
+      medewerker_id: ik.id, datum: s, status, van: deels ? $("pVan").value : null, tot: deels ? $("pTot").value : null, opmerking: $("pOpm").value.trim() || null,
+    }));
+    if (!rijen.length) { melding("Alle dagen in dit patroon zijn al ingevuld."); return; }
+    check(await sb.from("beschikbaarheid").insert(rijen));
+    sluitDialoog();
+    melding(`${rijen.length} ${rijen.length === 1 ? "dag" : "dagen"} ingevuld${bezet.size ? `, ${bezet.size} al ingevuld` : ""}`);
+    ververs();
+  });
+  $("pStatus").addEventListener("change", () => {
+    const st = $("pStatus").value;
+    $("pTijden").hidden = st !== "deels";
+    $("pOpmVeld").hidden = st === "leeg";
+    $("pHint").hidden = st !== "leeg";
   });
 }
 
@@ -669,7 +754,7 @@ async function tekenPlannen() {
         const dicht = !afdOpen(a, s);
         return `<td class="cel ${s === nu ? "vandaag" : ""} ${dicht && !hier.length ? "dicht" : ""}">
           <span class="besch ${b?.status || ""}"${b?.opmerking ? ` title="${esc(b.opmerking)}"` : ""}>${beschTekst(b)}${b?.opmerking ? " *" : ""}</span>
-          ${hier.map((d) => `<button class="chip" type="button" data-dienst="${d.id}"><b>${tijd(d.start_tijd)}–${tijd(d.eind_tijd)}</b>${d.opmerking ? `<small>${esc(d.opmerking)}</small>` : ""}</button>`).join("")}
+          ${hier.map((d) => `<button class="chip" type="button" data-dienst="${d.id}"><b>${tijd(d.start_tijd)}–${tijd(d.eind_tijd)}${d.patroon_id ? ` <span title="Onderdeel van een patroon" aria-label="Onderdeel van een patroon">↻</span>` : ""}</b>${d.opmerking ? `<small>${esc(d.opmerking)}</small>` : ""}</button>`).join("")}
           <button class="plus" type="button" data-nieuw="${id}|${a}|${s}" aria-label="Dienst toevoegen voor ${esc(naamVan(id))} op ${esc(dagLang(s))}">+</button>
         </td>`;
       }).join("")}</tr>`).join("")}</tbody></table></div>`
@@ -680,7 +765,6 @@ async function tekenPlannen() {
     <div class="kop"><h1>Plannen</h1>${weekNavHtml()}</div>
     <div class="kop" style="margin-bottom:20px">
       <button class="btn" id="kopieer" type="button">Rooster van vorige week overnemen</button>
-      ${alleDagenHtml()}
     </div>
     ${secties}`;
   $("kopieer").addEventListener("click", kopieerWeek);
@@ -715,9 +799,18 @@ function dienstDialoog(d) {
       <label class="veld">Einde <input type="time" id="dEind" value="${eind}" required></label>
     </div>
     <label class="veld">Opmerking <input type="text" id="dOpm" value="${esc(d.opmerking)}" placeholder="Bijvoorbeeld kassa of mise en place"></label>
+    ${d.patroon_id ? `<label class="check"><input type="checkbox" id="dAlle"> Ook alle volgende diensten van dit patroon wijzigen</label>` : `<div class="twee">
+      <label class="veld">Herhalen <select id="dStap">
+        <option value="0">Niet herhalen</option>
+        <option value="7">Elke ${esc(fmt(d.datum, { weekday: "long" }))}</option>
+        <option value="14">Om de week op ${esc(fmt(d.datum, { weekday: "long" }))}</option>
+      </select></label>
+      <label class="veld" id="dEindeVeld" hidden>Tot en met <input type="date" id="dEinde" value="${plus(d.datum, PATROON_STANDAARD_DAGEN)}" min="${d.datum}" max="${plus(d.datum, PATROON_MAX_DAGEN)}"></label>
+    </div>`}
     <div class="hint" id="dHint" hidden></div>
     <div class="knoppen">
       ${nieuw ? "" : `<button class="btn gevaar" type="button" id="dWeg">Dienst verwijderen</button>`}
+      ${d.patroon_id ? `<button class="btn gevaar" type="button" id="dWegAlle">Ook alle volgende verwijderen</button>` : ""}
       <div class="rechts"><button class="btn" type="button" data-sluit>Annuleren</button><button class="btn primair" type="submit">Opslaan</button></div>
     </div>
   </form>`, async () => {
@@ -726,13 +819,16 @@ function dienstDialoog(d) {
     const dubbel = planData.diensten.find((x) => x.id !== d.id && x.medewerker_id === d.medewerker_id && x.datum === d.datum
       && overlapt({ start: rij.start_tijd, eind: rij.eind_tijd }, { start: tijd(x.start_tijd), eind: tijd(x.eind_tijd) }));
     if (dubbel) throw new Error(`Overlapt met de dienst van ${tijd(dubbel.start_tijd)} tot ${tijd(dubbel.eind_tijd)} in ${AFD[dubbel.afdeling].naam.toLowerCase()}.`);
-    if (nieuw) check(await sb.from("diensten").insert(rij));
-    else check(await sb.from("diensten").update(rij).eq("id", d.id));
+    const stap = Number($("dStap")?.value || 0);
+    const alle = !!$("dAlle")?.checked;
+    if (stap) controleerPatroonEinde(d.datum, $("dEinde").value);
+    const tekst = alle ? await wijzigVolgende(d, rij) : stap ? await maakDienstPatroon(d, rij, stap, $("dEinde").value) : await slaDienstOp(d, rij);
     opslag.set("gz-tijden-" + rij.afdeling, JSON.stringify({ start: rij.start_tijd, eind: rij.eind_tijd }));
     sluitDialoog();
-    melding("Dienst opgeslagen");
+    melding(tekst);
     ververs();
   });
+  $("dStap")?.addEventListener("change", () => { $("dEindeVeld").hidden = $("dStap").value === "0"; });
   const hint = () => {
     const el = $("dHint"); if (!el) return;
     let t = "";
@@ -750,6 +846,64 @@ function dienstDialoog(d) {
       sluitDialoog(); melding("Dienst verwijderd"); ververs();
     } catch (e) { melding(foutTekst(e), true); }
   });
+  let wegBevestigd = false;
+  $("dWegAlle")?.addEventListener("click", async (e) => {
+    try {
+      const volgende = () => sb.from("diensten").delete().eq("patroon_id", d.patroon_id).gte("datum", d.datum);
+      if (!wegBevestigd) {
+        const rijen = check(await sb.from("diensten").select("id").eq("patroon_id", d.patroon_id).gte("datum", d.datum));
+        wegBevestigd = true;
+        e.target.textContent = `Bevestig: ${rijen.length} ${rijen.length === 1 ? "dienst" : "diensten"} verwijderen`;
+        return;
+      }
+      const weg = check(await volgende().select("id"));
+      sluitDialoog();
+      melding(`${weg.length} ${weg.length === 1 ? "dienst" : "diensten"} verwijderd`);
+      ververs();
+    } catch (err) { melding(foutTekst(err), true); }
+  });
+}
+
+async function slaDienstOp(d, rij) {
+  if (d.id) check(await sb.from("diensten").update(rij).eq("id", d.id));
+  else check(await sb.from("diensten").insert(rij));
+  return "Dienst opgeslagen";
+}
+const eigenDienstenVanaf = (id, van, tot) => {
+  let q = sb.from("diensten").select("*").eq("medewerker_id", id).gte("datum", van);
+  if (tot) q = q.lte("datum", tot);
+  return q;
+};
+const zelfdeTijd = (r, x) => overlapt({ start: tijd(r.start_tijd), eind: tijd(r.eind_tijd) }, { start: tijd(x.start_tijd), eind: tijd(x.eind_tijd) });
+
+async function maakDienstPatroon(d, rij, stap, einde) {
+  const datums = patroonDatums(d.datum, stap, einde);
+  const patroon_id = nieuweId();
+  const [bestaand, besch] = await Promise.all([
+    eigenDienstenVanaf(d.medewerker_id, d.datum, einde).then(check),
+    sb.from("beschikbaarheid").select("datum,status").eq("medewerker_id", d.medewerker_id).gte("datum", d.datum).lte("datum", einde).then(check),
+  ]);
+  const vrij = datums.filter((s) => !bestaand.some((x) => x.id !== d.id && x.datum === s && zelfdeTijd(rij, x)));
+  const rijen = vrij.filter((s) => s !== d.datum || !d.id).map((s) => ({ ...rij, datum: s, patroon_id }));
+  if (d.id) check(await sb.from("diensten").update({ ...rij, patroon_id }).eq("id", d.id));
+  if (rijen.length) check(await sb.from("diensten").insert(rijen));
+  const nietBeschikbaar = vrij.filter((s) => besch.some((b) => b.datum === s && b.status === "niet")).length;
+  const overgeslagen = datums.length - vrij.length;
+  return [
+    `${vrij.length} ${vrij.length === 1 ? "dienst" : "diensten"} gepland`,
+    overgeslagen ? `${overgeslagen} overgeslagen (stond al iets)` : "",
+    nietBeschikbaar ? `${nietBeschikbaar} op een dag dat deze persoon niet kan` : "",
+  ].filter(Boolean).join(", ");
+}
+
+async function wijzigVolgende(d, rij) {
+  const alleDiensten = check(await eigenDienstenVanaf(d.medewerker_id, d.datum));
+  const reeks = alleDiensten.filter((x) => x.patroon_id === d.patroon_id);
+  const botsing = alleDiensten.find((x) => x.patroon_id !== d.patroon_id && reeks.some((r) => r.datum === x.datum) && zelfdeTijd(rij, x));
+  if (botsing) throw new Error(`Op ${dagLang(botsing.datum)} staat al een dienst van ${tijd(botsing.start_tijd)} tot ${tijd(botsing.eind_tijd)}.`);
+  const { afdeling, start_tijd, eind_tijd, opmerking } = rij;
+  check(await sb.from("diensten").update({ afdeling, start_tijd, eind_tijd, opmerking }).eq("patroon_id", d.patroon_id).gte("datum", d.datum));
+  return `${reeks.length} ${reeks.length === 1 ? "dienst" : "diensten"} gewijzigd`;
 }
 
 async function kopieerWeek() {
@@ -804,19 +958,19 @@ async function tekenUren() {
       const { k, d } = r;
       if (!k) {
         return `<tr class="mist"><td>${esc(dagKort(r.datum))}</td><td>${esc(AFD[d.afdeling].naam)}</td><td>${tijd(d.start_tijd)}–${tijd(d.eind_tijd)}</td><td colspan="3"><span class="vlag">${d.datum === nu ? "Nog niet ingeklokt" : "Niet ingeklokt"}</span></td><td class="n">–</td>
-          ${isBeheerder() ? `<td class="acties"><button type="button" data-klok-nieuw="${d.id}">Invullen</button></td>` : ""}</tr>`;
+          <td class="acties">${isBeheerder() ? `<button type="button" data-klok-nieuw="${d.id}">Invullen</button>` : ""}</td></tr>`;
       }
       const m = klokMin(k);
       totaal += m;
       const openVan = !k.uit_tijd && k.datum < nu;
       if (openVan) aantalOpen++;
-      const vlag = openVan ? `<span class="vlag">Niet uitgeklokt</span>` : !k.uit_tijd ? `<span class="vlag stil">Nog aan het werk</span>` : k.gecorrigeerd_op ? `<span class="vlag stil" title="${esc(k.opmerking ?? "")}">Aangepast</span>` : !k.dienst_id ? `<span class="vlag stil">Niet ingepland</span>` : "";
+      const vlag = openVan ? `<span class="vlag">Niet uitgeklokt</span>` : !k.uit_tijd ? `<span class="vlag stil">Nog aan het werk</span>` : k.gecorrigeerd_op ? `<span class="vlag stil" title="${esc(k.opmerking ?? "")}">${aangepastTekst(k)}</span>` : !k.dienst_id ? `<span class="vlag stil">Niet ingepland</span>` : "";
       return `<tr><td>${esc(dagKort(k.datum))}</td><td>${esc(AFD[k.afdeling]?.naam ?? "")}</td><td>${d ? `${tijd(d.start_tijd)}–${tijd(d.eind_tijd)}` : "–"}</td><td>${klokTijd(k.in_tijd)}</td><td>${klokTijd(k.uit_tijd) || vlag}</td><td class="n">${k.pauze_minuten ? k.pauze_minuten + " min" : "–"}</td><td class="n"><b>${k.uit_tijd ? urenTekst(m) : "–"}</b>${k.uit_tijd && vlag ? `<br>${vlag}` : ""}</td>
-        ${isBeheerder() ? `<td class="acties"><button type="button" data-klok="${k.id}">Aanpassen</button></td>` : ""}</tr>`;
+        <td class="acties">${isBeheerder() ? `<button type="button" data-klok="${k.id}">Aanpassen</button>` : k.datum >= plus(nu, -14) ? `<button type="button" data-eigen-uren="${k.id}">Aanpassen</button>` : ""}</td></tr>`;
     }).join("");
     return { id, totaal, html: `<section class="urenblok">
       <div class="urenkop"><h2>${esc(naamVan(id))}</h2><span>${gepland ? `ingepland ${urenTekst(gepland)}` : ""}</span><strong>${urenTekst(totaal)} uur</strong><span>(${urenDec(totaal)})</span></div>
-      <div class="urenschuif"><table class="uren"><thead><tr><th>Datum</th><th>Afdeling</th><th>Ingepland</th><th>In</th><th>Uit</th><th class="n">Pauze</th><th class="n">Gewerkt</th>${isBeheerder() ? "<th></th>" : ""}</tr></thead>
+      <div class="urenschuif"><table class="uren"><thead><tr><th>Datum</th><th>Afdeling</th><th>Ingepland</th><th>In</th><th>Uit</th><th class="n">Pauze</th><th class="n">Gewerkt</th><th class="acties"></th></tr></thead>
       <tbody>${regels || `<tr><td colspan="8">Geen uren in deze periode.</td></tr>`}</tbody></table></div>
     </section>` };
   });
@@ -842,7 +996,7 @@ async function tekenUren() {
       ${isBeheerder() ? `<label class="veld">Medewerker <select id="fMw"><option value="">Iedereen</option>${medewerkers.map((m) => `<option value="${m.id}"${m.id === f.medewerker ? " selected" : ""}>${esc(m.naam)}</option>`).join("")}</select></label>` : ""}
     </div>
     <div class="printkop"><div><h1>Urenoverzicht</h1><p>${esc(periode)}${f.afdeling ? `, ${esc(AFD[f.afdeling].naam.toLowerCase())}` : ""}</p><p>Geprint op ${esc(dagLang(nu))}</p></div><img alt="Graan &amp; Zo" src="${LOGO_PRINT}"></div>
-    ${aantalOpen ? `<div class="waarschuwing">${aantalOpen === 1 ? "1 dienst heeft" : aantalOpen + " diensten hebben"} geen uitkloktijd en ${aantalOpen === 1 ? "telt" : "tellen"} niet mee in de totalen.${isBeheerder() ? " Klik op Aanpassen om de eindtijd in te vullen." : " Geef je eindtijd door aan de beheerder."}</div>` : ""}
+    ${aantalOpen ? `<div class="waarschuwing">${aantalOpen === 1 ? "1 dienst heeft" : aantalOpen + " diensten hebben"} geen uitkloktijd en ${aantalOpen === 1 ? "telt" : "tellen"} niet mee in de totalen.${isBeheerder() ? " Klik op Aanpassen om de eindtijd in te vullen." : " Klik op Aanpassen om je uittijd in te vullen, of vraag het de beheerder als dat niet meer kan."}</div>` : ""}
     ${totaalBlok}
     ${blokken.map((b) => b.html).join("") || `<div class="leeg"><strong>Geen uren in deze periode</strong>Kies een andere periode of afdeling.</div>`}`;
 
@@ -862,11 +1016,18 @@ async function tekenUren() {
     if (opties) { [urenFilter.van, urenFilter.tot] = opties; ververs(); }
   });
   $("urenNieuw")?.addEventListener("click", () => klokDialoog({ medewerker_id: urenFilter.medewerker || "", datum: nu, afdeling: urenFilter.afdeling || "" }));
+  $("inhoud").querySelectorAll("[data-eigen-uren]").forEach((k) => k.addEventListener("click", () => eigenUrenDialoog(klok.find((x) => x.id === k.dataset.eigenUren))));
   $("inhoud").querySelectorAll("[data-klok]").forEach((k) => k.addEventListener("click", () => klokDialoog(klok.find((x) => x.id === k.dataset.klok))));
   $("inhoud").querySelectorAll("[data-klok-nieuw]").forEach((k) => k.addEventListener("click", () => {
     const d = diensten.find((x) => x.id === k.dataset.klokNieuw);
     klokDialoog({ medewerker_id: d.medewerker_id, datum: d.datum, afdeling: d.afdeling, dienst_id: d.id, _in: tijd(d.start_tijd), _uit: tijd(d.eind_tijd) });
   }));
+}
+
+function aangepastTekst(k) {
+  const zelf = k.gecorrigeerd_door === k.medewerker_id;
+  const was = k.in_oorspronkelijk ? ` (was ${klokTijd(k.in_oorspronkelijk)}–${klokTijd(k.uit_oorspronkelijk) || "open"})` : "";
+  return `${zelf ? "Zelf aangepast" : "Aangepast"}${was}`;
 }
 
 function klokDialoog(k) {

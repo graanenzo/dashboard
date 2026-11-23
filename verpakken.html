@@ -2524,7 +2524,7 @@ function ikTellenTekenen() {
 
 function ikZoekArtikelen(q) {
   const woorden = q.toLowerCase().split(/\s+/).filter(Boolean);
-  return ik.artikelen.filter((a) => a.eigen_voorraad && woorden.every((w) => (a.naam + " " + (a.leverancier_artnr || "") + " " + (a.ean || "")).toLowerCase().includes(w)));
+  return ik.artikelen.filter((a) => a.eigen_voorraad && a.leverancier_id === ik.odinId && woorden.every((w) => (a.naam + " " + (a.leverancier_artnr || "") + " " + (a.ean || "")).toLowerCase().includes(w)));
 }
 
 function ikTelOp(artikelId, n = 1) {
@@ -2537,6 +2537,7 @@ function ikTelOp(artikelId, n = 1) {
 async function ikTellenScan(code) {
   const a = ikOpEan(code);
   if (!a) { ik.tellingWachtEan = code.replace(/\D/g, ""); melding("Onbekende barcode: zoek het product om te koppelen"); ikTellenTekenen(); $("ikTelZoek").focus(); return; }
+  if (!a.eigen_voorraad) { melding(`${a.naam}: hiervan wordt geen voorraad bijgehouden (alleen Odin)`, true); return; }
   ikTelOp(a.id, 1);
   ikTellenTekenen();
   melding(`${a.naam}: ${ikGetal(ik.telling.find((x) => x.artikel_id === a.id).geteld)}`);

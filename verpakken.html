@@ -394,6 +394,15 @@ ul.ik-regels { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
 .ik-resultaten button { text-align: left; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 8px; padding: 8px 10px; }
 .ik-resultaten button:hover { border-color: var(--ink); }
 .ik-uitleg { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.ar-tabel td { padding: 4px 6px; }
+.ar-tabel select { font: inherit; padding: 4px; border: 1.5px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); }
+.ar-tabel select:hover, .ar-tabel select:focus { border-color: var(--line); background: var(--bg); }
+.ar-tabel input.ar-prijs { width: 8ch; text-align: right; }
+.ar-tabel tr.ar-nieuw { background: var(--graan-soft); }
+.ar-klein { padding: 4px 8px; font-size: 0.8rem; }
+.ar-select { font: inherit; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.ar-check { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; font-size: 0.9rem; }
+.mono { font-family: var(--font-mono); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -518,6 +527,10 @@ ul.ik-regels { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
       <div id="ikLevering"></div>
       <div id="ikTellen" hidden></div>
       <div id="ikArtikelen" hidden></div>
+    </section>
+    <section id="artikelen" hidden>
+      <a class="terug" href="#winkel">← Alle onderdelen</a>
+      <div id="arInhoud"></div>
     </section>
     <section id="binnenkort" hidden>
       <a class="terug" href="#magazijn">← Alle onderdelen</a>
@@ -974,6 +987,7 @@ const ONDERDELEN = [
   { id: "overige-bestellingen", naam: "Overige bestellingen", uitleg: "Bestellingen van vaste klanten per mail", klaar: true, overig: true },
   { id: "mengen", naam: "Mengen", uitleg: "Mengsels maken en afvinken", klaar: true, taak: true },
   { id: "winkel-inkoop", afdeling: "winkel", naam: "Inkoop & voorraad", uitleg: "Odin-levering inlezen en controleren, voorraad tellen", klaar: true, inkoop: true },
+  { id: "winkel-artikelen", afdeling: "winkel", naam: "Artikelen", uitleg: "PLU-lijst van de kassa: prijzen, barcodes, nieuwe producten, opschonen", klaar: true, artikelen: true },
   { id: "winkel-schoonmaak", afdeling: "winkel", naam: "Schoonmaak", uitleg: "Schoonmaakrooster winkel afvinken", klaar: true, schoonmaak: true },
   { id: "restaurant-schoonmaak", afdeling: "restaurant", naam: "Schoonmaak", uitleg: "Schoonmaakrooster bediening afvinken", klaar: true, schoonmaak: true },
   { id: "restaurant-mep", afdeling: "restaurant", naam: "Mise en place", uitleg: "Mise en place afvinken en overdragen", klaar: true, mep: true },
@@ -1003,6 +1017,8 @@ function tegelsTekenen() {
           ? `<span class="teller-label">Rooster afvinken</span>`
           : o.inkoop
           ? `<span class="teller-label">Levering · tellen · artikelen</span>`
+          : o.artikelen
+          ? `<span class="teller-label">Productlijst van de kassa</span>`
           : `<span class="teller-label">Binnenkort</span>`}
     </a>`).join("");
 }
@@ -1031,11 +1047,13 @@ function route() {
   if (o && o.overig) obTekenen();
   $("inkoop").hidden = !(o && o.inkoop);
   if (o && o.inkoop) ikOpenen();
-  $("binnenkort").hidden = !(o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && !o.inkoop && o.id !== "webbestellingen");
+  $("artikelen").hidden = !(o && o.artikelen);
+  if (o && o.artikelen) arOpenen();
+  $("binnenkort").hidden = !(o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && !o.inkoop && !o.artikelen && o.id !== "webbestellingen");
   if (o && o.mep) { mepDatum = mepVandaag(); mepLaden(); }
   if (o && o.schoonmaak) { smAfdeling = o.afdeling; smLaden(); }
   $("sectienaam").textContent = o ? o.naam : naam;
-  if (o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && !o.inkoop && o.id !== "webbestellingen") $("binnenkortTitel").textContent = o.naam;
+  if (o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && !o.inkoop && !o.artikelen && o.id !== "webbestellingen") $("binnenkortTitel").textContent = o.naam;
   if (o && o.taak) {
     huidigeSoort = o.id;
     if (!$("taakDatum").value) $("taakDatum").value = vandaagIso();
@@ -1958,14 +1976,16 @@ async function ikOpenen() {
 }
 
 async function ikLaden() {
-  const [art, vr, lev] = await Promise.all([
-    sb.from("artikelen").select("id, soort, naam, ean, plu, leverancier_id, leverancier_artnr, besteleenheid, inhoud_tekst, netto_gram, adviesprijs, inkoopprijs, btw, eigen_voorraad").eq("actief", true).order("naam").limit(5000),
-    sb.from("v_voorraad").select("artikel_id, voorraad").limit(5000),
-    sb.from("leveranciers").select("id").eq("naam", "Odin").maybeSingle(),
-  ]);
-  if (art.error || vr.error) { melding("Artikelen laden lukte niet: " + (art.error || vr.error).message, true); return; }
-  ik.artikelen = art.data;
-  ik.voorraad = new Map(vr.data.map((v) => [v.artikel_id, Number(v.voorraad)]));
+  let art, vr;
+  const lev = await sb.from("leveranciers").select("id").eq("naam", "Odin").maybeSingle();
+  try {
+    [art, vr] = await Promise.all([
+      sbAlles(() => sb.from("artikelen").select("id, soort, naam, ean, plu, leverancier_id, leverancier_artnr, besteleenheid, inhoud_tekst, netto_gram, adviesprijs, inkoopprijs, btw, eigen_voorraad").eq("actief", true).order("naam").order("id")),
+      sbAlles(() => sb.from("v_voorraad").select("artikel_id, voorraad").order("artikel_id")),
+    ]);
+  } catch (e) { melding("Artikelen laden lukte niet: " + (e.message || e), true); return; }
+  ik.artikelen = art;
+  ik.voorraad = new Map(vr.map((v) => [v.artikel_id, Number(v.voorraad)]));
   ik.odinId = lev.data ? lev.data.id : null;
   ik.geladen = true;
 }
@@ -2709,6 +2729,289 @@ document.addEventListener("keydown", (e) => {
     else if (ik.tab === "tellen") ikTellenScan(code);
   }
 });
+
+// ============================================================ Artikelen (PLU-lijst)
+// De productlijst van de kassa beheren: zoeken, prijs/naam/barcode wijzigen,
+// nieuw artikel, en opschonen op basis van verkoopdata (uitzetten, niet
+// verwijderen).
+
+// Supabase geeft maximaal 1000 rijen per keer: in delen ophalen.
+async function sbAlles(maak) {
+  const uit = [];
+  for (let van = 0; ; van += 1000) {
+    const { data, error } = await maak().range(van, van + 999);
+    if (error) throw error;
+    uit.push(...data);
+    if (data.length < 1000) break;
+  }
+  return uit;
+}
+
+const ar = {
+  geladen: false,
+  lijst: [],
+  voorraad: new Map(),
+  verkoop: new Map(),
+  zoek: "",
+  filter: "alle",
+  soort: "",
+  inactief: false,
+  gekozen: new Set(),
+  nieuw: false,
+  sinds: null, // eerste verkoop in de database: tot wanneer de cijfers terug gaan
+};
+const AR_FILTERS = [
+  { id: "alle", label: "Alle" },
+  { id: "uitkassa", label: "Nieuw uit kassa" },
+  { id: "niet90", label: "Niet verkocht 3 mnd" },
+  { id: "niet180", label: "Niet verkocht 6 mnd" },
+  { id: "niet365", label: "Niet verkocht 12 mnd" },
+  { id: "dubbel", label: "Mogelijk dubbel" },
+  { id: "geenprijs", label: "Geen of € 0 prijs" },
+  { id: "geencode", label: "Geen barcode" },
+];
+const AR_SOORT = { verpakking: "Eigen verpakking", handelsartikel: "Ingekocht", grondstof: "Per kg / bulk", mengsel: "Mengsel" };
+
+async function arOpenen() {
+  if (!ar.geladen) { $("arInhoud").innerHTML = `<div class="ik-bezig">Artikelen laden…</div>`; await arLaden(); }
+  arTekenen();
+}
+
+async function arLaden() {
+  try {
+    const [lijst, vr, vk, eerste] = await Promise.all([
+      sbAlles(() => sb.from("artikelen").select("id, soort, naam, plu, ean, prijs, btw, actief, uit_kassa, label_verpakking_id, leverancier_id, inhoud_tekst, notitie, aangemaakt_op").order("plu", { nullsFirst: false }).order("naam").order("id")),
+      sbAlles(() => sb.from("v_voorraad").select("artikel_id, voorraad").order("artikel_id")),
+      sbAlles(() => sb.from("v_artikel_verkoop").select("artikel_id, laatst_verkocht, aantal_90d, omzet_90d, bonnen").order("artikel_id")),
+      sb.from("verkopen").select("tijd").order("tijd").limit(1).maybeSingle(),
+    ]);
+    ar.lijst = lijst;
+    ar.voorraad = new Map(vr.map((v) => [v.artikel_id, Number(v.voorraad)]));
+    ar.verkoop = new Map(vk.map((v) => [v.artikel_id, v]));
+    ar.sinds = eerste.data ? new Date(eerste.data.tijd) : null;
+    ar.geladen = true;
+  } catch (e) {
+    melding("Artikelen laden lukte niet: " + (e.message || e), true);
+  }
+}
+
+const arNorm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+function arDubbelen() {
+  const perEan = new Map(), perNaam = new Map();
+  for (const a of ar.lijst) {
+    if (!a.actief) continue;
+    if (a.ean) { const k = a.ean.replace(/^0+/, ""); perEan.set(k, (perEan.get(k) || 0) + 1); }
+    const n = arNorm(a.naam);
+    if (n) perNaam.set(n, (perNaam.get(n) || 0) + 1);
+  }
+  return new Set(ar.lijst.filter((a) => a.actief && ((a.ean && perEan.get(a.ean.replace(/^0+/, "")) > 1) || perNaam.get(arNorm(a.naam)) > 1)).map((a) => a.id));
+}
+
+function arGefilterd() {
+  let l = ar.lijst.filter((a) => ar.inactief ? !a.actief : a.actief);
+  if (ar.soort) l = l.filter((a) => a.soort === ar.soort);
+  const nu = Date.now();
+  const nietSinds = (dagen) => (a) => {
+    const v = ar.verkoop.get(a.id);
+    return !v || nu - new Date(v.laatst_verkocht).getTime() > dagen * 86400000;
+  };
+  if (ar.filter === "uitkassa") l = l.filter((a) => a.uit_kassa);
+  if (ar.filter === "niet90") l = l.filter(nietSinds(90));
+  if (ar.filter === "niet180") l = l.filter(nietSinds(180));
+  if (ar.filter === "niet365") l = l.filter(nietSinds(365));
+  if (ar.filter === "dubbel") { const d = arDubbelen(); l = l.filter((a) => d.has(a.id)).sort((x, y) => arNorm(x.naam).localeCompare(arNorm(y.naam))); }
+  if (ar.filter === "geenprijs") l = l.filter((a) => a.plu != null && !(Number(a.prijs) > 0));
+  if (ar.filter === "geencode") l = l.filter((a) => !a.ean && !a.label_verpakking_id && a.soort !== "grondstof");
+  const q = ar.zoek.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (q.length) l = l.filter((a) => q.every((w) => `${a.naam} ${a.plu ?? ""} ${a.ean ?? ""}`.toLowerCase().includes(w)));
+  return l;
+}
+
+function arDatum(d) {
+  if (!d) return "–";
+  return new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "2-digit" });
+}
+
+function arTekenen() {
+  const el = $("arInhoud");
+  if (!ar.geladen) return;
+  const lijst = arGefilterd();
+  const dagenData = ar.sinds ? Math.max(0, Math.floor((Date.now() - ar.sinds.getTime()) / 86400000)) : 0;
+  const filterUitleg = /^niet/.test(ar.filter)
+    ? `<p class="ik-uitleg" style="margin:0 0 10px">${ar.sinds
+        ? `Verkoopgegevens vanaf ${arDatum(ar.sinds)} (${dagenData} dagen).${dagenData < Number(ar.filter.slice(4)) ? " <b>Nog te kort om op te schonen:</b> wacht tot er genoeg dagen zijn, anders lijkt alles onverkocht." : ""}`
+        : "<b>Nog geen verkopen in de database.</b> Zodra de nieuwe kassaversie draait, komen de verkopen binnen."}</p>` : "";
+  const aantalGekozen = [...ar.gekozen].filter((id) => lijst.some((a) => a.id === id)).length;
+  el.innerHTML = `
+    <div class="ik-zoek">
+      <input id="arZoek" placeholder="Zoek op naam, PLU of barcode" value="${esc(ar.zoek)}" autocomplete="off">
+      <select id="arSoort" class="ar-select">
+        <option value="">Alle soorten</option>
+        ${Object.entries(AR_SOORT).map(([k, v]) => `<option value="${k}" ${ar.soort === k ? "selected" : ""}>${v}</option>`).join("")}
+      </select>
+      <label class="ar-check"><input type="checkbox" id="arInactief" ${ar.inactief ? "checked" : ""}> Uitgezet</label>
+      <button type="button" class="btn ok" data-ar="nieuw">+ Nieuw artikel</button>
+    </div>
+    <nav class="tabs sm-tabs" style="padding-top:0">
+      ${AR_FILTERS.map((f) => `<button type="button" data-ar="filter" data-f="${f.id}" aria-pressed="${ar.filter === f.id}">${f.label}</button>`).join("")}
+    </nav>
+    ${filterUitleg}
+    ${ar.nieuw ? arNieuwHtml() : ""}
+    <div class="ik-voet" style="position:static;border:0;padding:4px 0 10px">
+      <span class="ik-uitleg">${lijst.length} artikel${lijst.length === 1 ? "" : "en"}${lijst.length > 300 ? " (eerste 300 getoond, zoek om te verfijnen)" : ""}</span>
+      <span class="ruimte"></span>
+      ${aantalGekozen ? `<button type="button" class="btn ${ar.inactief ? "ok" : "stil"}" data-ar="bulk">${ar.inactief ? "Weer aanzetten" : "Uitzetten"} (${aantalGekozen})</button>` : ""}
+    </div>
+    <div class="ik-tabelwrap"><table class="ik-tabel ar-tabel">
+      <thead><tr>
+        <th><input type="checkbox" data-ar="alles" aria-label="Alles kiezen"></th>
+        <th>PLU</th><th>Naam</th><th>Barcode</th><th class="n">Prijs</th><th>Btw</th><th>Soort</th>
+        <th class="n">Voorraad</th><th class="n">Laatst verkocht</th><th class="n">3 mnd</th><th></th>
+      </tr></thead>
+      <tbody>${lijst.slice(0, 300).map(arRij).join("")}</tbody>
+    </table></div>`;
+}
+
+function arRij(a) {
+  const sticker = !!a.label_verpakking_id;
+  const v = ar.verkoop.get(a.id);
+  const vr = ar.voorraad.get(a.id);
+  const kg = a.soort === "grondstof" || a.soort === "mengsel";
+  return `
+    <tr data-id="${a.id}" class="${a.uit_kassa ? "ar-nieuw" : ""}">
+      <td><input type="checkbox" data-ar="kies" ${ar.gekozen.has(a.id) ? "checked" : ""} aria-label="Kiezen"></td>
+      <td class="n">${a.plu ?? "–"}</td>
+      <td>${sticker
+          ? `<span title="Naam en prijs komen uit de stickerapp">${esc(a.naam)} <span class="chip">sticker</span></span>`
+          : `<input value="${esc(a.naam)}" data-ar-veld="naam" aria-label="Naam">`}
+          ${a.uit_kassa ? `<span class="chip vandaag" title="${esc(a.notitie || "")}">uit kassa</span>` : ""}</td>
+      <td>${sticker ? `<span class="mono">${esc(a.ean || "")}</span>` : `<input class="ean" value="${esc(a.ean || "")}" data-ar-veld="ean" inputmode="numeric" placeholder="scan…" aria-label="Barcode">`}</td>
+      <td class="n">${sticker ? ikEuro(a.prijs) : `<input class="ar-prijs" value="${a.prijs != null ? String(a.prijs).replace(".", ",") : ""}" data-ar-veld="prijs" inputmode="decimal" aria-label="Prijs">`}${kg ? "/kg" : ""}</td>
+      <td><select data-ar-veld="btw" aria-label="Btw">${[0, 9, 21].map((b) => `<option value="${b}" ${Number(a.btw) === b ? "selected" : ""}>${b}%</option>`).join("")}</select></td>
+      <td>${sticker ? AR_SOORT[a.soort] : `<select data-ar-veld="soort" aria-label="Soort">${Object.entries(AR_SOORT).map(([k, t]) => `<option value="${k}" ${a.soort === k ? "selected" : ""}>${t}</option>`).join("")}</select>`}</td>
+      <td class="n">${vr == null ? "–" : ikGetal(vr) + (kg ? " kg" : "")}</td>
+      <td class="n">${v ? arDatum(v.laatst_verkocht) : "–"}</td>
+      <td class="n">${v && v.aantal_90d != null ? ikGetal(v.aantal_90d) : "–"}</td>
+      <td>${a.actief
+          ? `<button type="button" class="btn stil ar-klein" data-ar="uit">Uitzetten</button>`
+          : `<button type="button" class="btn ok ar-klein" data-ar="aan">Aanzetten</button>`}
+          ${a.uit_kassa ? `<button type="button" class="btn stil ar-klein" data-ar="klaar" title="Gecontroleerd: label 'uit kassa' weghalen">Klaar</button>` : ""}</td>
+    </tr>`;
+}
+
+function arNieuwHtml() {
+  return `
+    <form class="taakform" id="arNieuwForm" autocomplete="off" style="margin:0 0 12px">
+      <label class="veld breed">Naam<input id="arNNaam" required placeholder="Bijv. Appelsap 1 l (Merk)"></label>
+      <label class="veld">Prijs (incl. btw)<input id="arNPrijs" required inputmode="decimal" placeholder="2,95"></label>
+      <label class="veld">Barcode<input id="arNEan" inputmode="numeric" placeholder="scan of leeg"></label>
+      <label class="veld smal">Btw<select id="arNBtw"><option>9</option><option>21</option><option>0</option></select></label>
+      <label class="veld">Soort<select id="arNSoort">
+        <option value="handelsartikel">Ingekocht (per stuk)</option>
+        <option value="grondstof">Per kg / bulk</option>
+        <option value="verpakking">Eigen verpakking zonder sticker</option>
+      </select></label>
+      <button class="btn ok" type="submit">Toevoegen</button>
+      <button class="btn stil" type="button" data-ar="nieuw-weg">Annuleren</button>
+      <p class="ik-uitleg" style="flex-basis:100%;margin:0">Het PLU-nummer wordt automatisch gekozen. Eigen verpakkingen met een sticker maak je in de stickerapp.</p>
+    </form>`;
+}
+
+async function arBewaar(id, veld, waarde) {
+  const a = ar.lijst.find((x) => x.id === id);
+  const { error } = await sb.from("artikelen").update({ [veld]: waarde }).eq("id", id);
+  if (error) {
+    melding(/ean_uniek|duplicate/.test(error.message) ? "Deze barcode hoort al bij een ander artikel" : "Opslaan lukte niet: " + error.message, true);
+    arTekenen();
+    return false;
+  }
+  if (a) a[veld] = waarde;
+  return true;
+}
+
+async function arVeld(el) {
+  const id = el.closest("tr").dataset.id;
+  const a = ar.lijst.find((x) => x.id === id);
+  const veld = el.dataset.arVeld;
+  let w = el.value.trim();
+  if (veld === "naam") { if (!w) { el.value = a.naam; return; } }
+  if (veld === "ean") {
+    w = w.replace(/\D/g, "") || null;
+    if (w && !/^\d{8,14}$/.test(w)) { melding("Een barcode heeft 8 tot 14 cijfers", true); el.value = a.ean || ""; return; }
+  }
+  if (veld === "prijs") {
+    const n = Number(w.replace(/\./g, "").replace(",", "."));
+    if (w === "" || isNaN(n) || n < 0 || n >= 10000) { melding("Ongeldige prijs", true); el.value = a.prijs != null ? String(a.prijs).replace(".", ",") : ""; return; }
+    w = Math.round(n * 100) / 100;
+  }
+  if (veld === "btw") w = Number(w);
+  if ((a[veld] ?? null) === w || String(a[veld] ?? "") === String(w ?? "")) return;
+  if (await arBewaar(id, veld, w)) melding(veld === "prijs" ? "Prijs opgeslagen; de kassa's nemen hem binnen 10 minuten over" : "Opgeslagen");
+}
+
+async function arActief(ids, actief) {
+  if (!ids.length) return;
+  const { error } = await sb.from("artikelen").update({ actief }).in("id", ids);
+  if (error) { melding("Lukte niet: " + error.message, true); return; }
+  for (const a of ar.lijst) if (ids.includes(a.id)) a.actief = actief;
+  ids.forEach((id) => ar.gekozen.delete(id));
+  melding(`${ids.length} artikel${ids.length === 1 ? "" : "en"} ${actief ? "aangezet" : "uitgezet"}${actief ? "" : "; ze verdwijnen binnen 10 minuten uit de kassa"}`);
+  arTekenen();
+}
+
+async function arNieuw(e) {
+  e.preventDefault();
+  const naam = $("arNNaam").value.trim();
+  const prijs = Number($("arNPrijs").value.trim().replace(",", "."));
+  const ean = $("arNEan").value.replace(/\D/g, "") || null;
+  if (!naam || isNaN(prijs) || prijs < 0) { melding("Vul naam en prijs in", true); return; }
+  if (ean && !/^\d{8,14}$/.test(ean)) { melding("Een barcode heeft 8 tot 14 cijfers", true); return; }
+  const { data: max } = await sb.from("artikelen").select("plu").gte("plu", 90000).order("plu", { ascending: false }).limit(1).maybeSingle();
+  const plu = Math.max(89999, max ? max.plu : 0) + 1;
+  const { data, error } = await sb.from("artikelen").insert({
+    soort: $("arNSoort").value, naam, prijs: Math.round(prijs * 100) / 100, ean, btw: Number($("arNBtw").value), plu,
+  }).select("id, soort, naam, plu, ean, prijs, btw, actief, uit_kassa, label_verpakking_id, leverancier_id, inhoud_tekst, notitie, aangemaakt_op").single();
+  if (error) { melding(/ean_uniek|duplicate/.test(error.message) ? "Deze barcode hoort al bij een ander artikel" : "Toevoegen lukte niet: " + error.message, true); return; }
+  ar.lijst.unshift(data);
+  ar.nieuw = false;
+  melding(`${naam} toegevoegd met PLU ${plu}; binnen 10 minuten in de kassa`);
+  arTekenen();
+}
+
+$("artikelen").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-ar]");
+  if (!b) return;
+  const act = b.dataset.ar;
+  const tr = b.closest("tr[data-id]");
+  if (act === "filter") { ar.filter = b.dataset.f; ar.gekozen.clear(); arTekenen(); }
+  if (act === "nieuw") { ar.nieuw = !ar.nieuw; arTekenen(); if (ar.nieuw) $("arNNaam").focus(); }
+  if (act === "nieuw-weg") { ar.nieuw = false; arTekenen(); }
+  if (act === "uit" && tr) await arActief([tr.dataset.id], false);
+  if (act === "aan" && tr) await arActief([tr.dataset.id], true);
+  if (act === "klaar" && tr) { if (await arBewaar(tr.dataset.id, "uit_kassa", false)) arTekenen(); }
+  if (act === "bulk") {
+    const ids = [...ar.gekozen].filter((id) => arGefilterd().some((a) => a.id === id));
+    if (!ar.inactief && !confirm(`${ids.length} artikel${ids.length === 1 ? "" : "en"} uitzetten? Ze verdwijnen uit de kassa; de historie blijft bewaard en je kunt ze weer aanzetten.`)) return;
+    await arActief(ids, ar.inactief);
+  }
+});
+$("artikelen").addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.dataset.ar === "kies") { const id = t.closest("tr").dataset.id; t.checked ? ar.gekozen.add(id) : ar.gekozen.delete(id); arTekenen(); return; }
+  if (t.dataset.ar === "alles") { const zicht = arGefilterd().slice(0, 300); zicht.forEach((a) => t.checked ? ar.gekozen.add(a.id) : ar.gekozen.delete(a.id)); arTekenen(); return; }
+  if (t.id === "arSoort") { ar.soort = t.value; arTekenen(); return; }
+  if (t.id === "arInactief") { ar.inactief = t.checked; ar.gekozen.clear(); arTekenen(); return; }
+  if (t.dataset.arVeld) arVeld(t);
+});
+$("artikelen").addEventListener("input", (e) => {
+  if (e.target.id !== "arZoek") return;
+  ar.zoek = e.target.value;
+  clearTimeout(arTekenen.t);
+  arTekenen.t = setTimeout(() => { const pos = $("arZoek").selectionStart; arTekenen(); const z = $("arZoek"); z.focus(); z.setSelectionRange(pos, pos); }, 200);
+});
+$("artikelen").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.dataset.arVeld) { e.preventDefault(); e.target.blur(); } });
+$("artikelen").addEventListener("submit", (e) => { if (e.target.id === "arNieuwForm") arNieuw(e); });
 
 sb.auth.getSession().then(({ data }) => (data.session ? toonApp(data.session) : toonLogin()));
 </script>

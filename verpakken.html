@@ -398,6 +398,8 @@ ul.ik-regels { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
 .ar-tabel select { font: inherit; padding: 4px; border: 1.5px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); }
 .ar-tabel select:hover, .ar-tabel select:focus { border-color: var(--line); background: var(--bg); }
 .ar-tabel input.ar-prijs { width: 8ch; text-align: right; }
+.ar-tabel td:nth-child(3) { min-width: 280px; }
+.ar-tabel select[data-ar-veld="leverancier_id"] { max-width: 14ch; }
 .ar-tabel tr.ar-nieuw { background: var(--graan-soft); }
 .ar-klein { padding: 4px 8px; font-size: 0.8rem; }
 .ar-select { font: inherit; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
@@ -2759,13 +2761,13 @@ const ar = {
   gekozen: new Set(),
   nieuw: false,
   sinds: null, // eerste verkoop in de database: tot wanneer de cijfers terug gaan
+  leveranciers: [],
+  leverancier: "",
 };
 const AR_FILTERS = [
   { id: "alle", label: "Alle" },
   { id: "uitkassa", label: "Nieuw uit kassa" },
   { id: "niet90", label: "Niet verkocht 3 mnd" },
-  { id: "niet180", label: "Niet verkocht 6 mnd" },
-  { id: "niet365", label: "Niet verkocht 12 mnd" },
   { id: "dubbel", label: "Mogelijk dubbel" },
   { id: "geenprijs", label: "Geen of € 0 prijs" },
   { id: "geencode", label: "Geen barcode" },
@@ -2779,6 +2781,8 @@ async function arOpenen() {
 
 async function arLaden() {
   try {
+    const lev = await sb.from("leveranciers").select("id, naam").eq("actief", true).order("naam");
+    ar.leveranciers = lev.data || [];
     const [lijst, vr, vk, eerste] = await Promise.all([
       sbAlles(() => sb.from("artikelen").select("id, soort, naam, plu, ean, prijs, btw, actief, uit_kassa, label_verpakking_id, leverancier_id, inhoud_tekst, notitie, aangemaakt_op").order("plu", { nullsFirst: false }).order("naam").order("id")),
       sbAlles(() => sb.from("v_voorraad").select("artikel_id, voorraad").order("artikel_id")),
@@ -2811,6 +2815,8 @@ function arDubbelen() {
 function arGefilterd() {
   let l = ar.lijst.filter((a) => ar.inactief ? !a.actief : a.actief);
   if (ar.soort) l = l.filter((a) => a.soort === ar.soort);
+  if (ar.leverancier === "geen") l = l.filter((a) => !a.leverancier_id);
+  else if (ar.leverancier) l = l.filter((a) => a.leverancier_id === ar.leverancier);
   const nu = Date.now();
   const nietSinds = (dagen) => (a) => {
     const v = ar.verkoop.get(a.id);
@@ -2850,6 +2856,11 @@ function arTekenen() {
         <option value="">Alle soorten</option>
         ${Object.entries(AR_SOORT).map(([k, v]) => `<option value="${k}" ${ar.soort === k ? "selected" : ""}>${v}</option>`).join("")}
       </select>
+      <select id="arLev" class="ar-select">
+        <option value="">Alle leveranciers</option>
+        ${ar.leveranciers.map((l) => `<option value="${l.id}" ${ar.leverancier === l.id ? "selected" : ""}>${esc(l.naam)}</option>`).join("")}
+        <option value="geen" ${ar.leverancier === "geen" ? "selected" : ""}>Zonder leverancier</option>
+      </select>
       <label class="ar-check"><input type="checkbox" id="arInactief" ${ar.inactief ? "checked" : ""}> Uitgezet</label>
       <button type="button" class="btn ok" data-ar="nieuw">+ Nieuw artikel</button>
     </div>
@@ -2866,7 +2877,7 @@ function arTekenen() {
     <div class="ik-tabelwrap"><table class="ik-tabel ar-tabel">
       <thead><tr>
         <th><input type="checkbox" data-ar="alles" aria-label="Alles kiezen"></th>
-        <th>PLU</th><th>Naam</th><th>Barcode</th><th class="n">Prijs</th><th>Btw</th><th>Soort</th>
+        <th>PLU</th><th>Naam</th><th>Barcode</th><th class="n">Prijs</th><th>Btw</th><th>Soort</th><th>Leverancier</th>
         <th class="n">Voorraad</th><th class="n">Laatst verkocht</th><th class="n">3 mnd</th><th></th>
       </tr></thead>
       <tbody>${lijst.slice(0, 300).map(arRij).join("")}</tbody>
@@ -2890,6 +2901,7 @@ function arRij(a) {
       <td class="n">${sticker ? ikEuro(a.prijs) : `<input class="ar-prijs" value="${a.prijs != null ? String(a.prijs).replace(".", ",") : ""}" data-ar-veld="prijs" inputmode="decimal" aria-label="Prijs">`}${kg ? "/kg" : ""}</td>
       <td><select data-ar-veld="btw" aria-label="Btw">${[0, 9, 21].map((b) => `<option value="${b}" ${Number(a.btw) === b ? "selected" : ""}>${b}%</option>`).join("")}</select></td>
       <td>${sticker ? AR_SOORT[a.soort] : `<select data-ar-veld="soort" aria-label="Soort">${Object.entries(AR_SOORT).map(([k, t]) => `<option value="${k}" ${a.soort === k ? "selected" : ""}>${t}</option>`).join("")}</select>`}</td>
+      <td><select data-ar-veld="leverancier_id" aria-label="Leverancier">${arLevOpties(a.leverancier_id)}</select></td>
       <td class="n">${vr == null ? "–" : ikGetal(vr) + (kg ? " kg" : "")}</td>
       <td class="n">${v ? arDatum(v.laatst_verkocht) : "–"}</td>
       <td class="n">${v && v.aantal_90d != null ? ikGetal(v.aantal_90d) : "–"}</td>
@@ -2898,6 +2910,22 @@ function arRij(a) {
           : `<button type="button" class="btn ok ar-klein" data-ar="aan">Aanzetten</button>`}
           ${a.uit_kassa ? `<button type="button" class="btn stil ar-klein" data-ar="klaar" title="Gecontroleerd: label 'uit kassa' weghalen">Klaar</button>` : ""}</td>
     </tr>`;
+}
+
+function arLevOpties(gekozen) {
+  return `<option value="">–</option>` +
+    ar.leveranciers.map((l) => `<option value="${l.id}" ${gekozen === l.id ? "selected" : ""}>${esc(l.naam)}</option>`).join("") +
+    `<option value="__nieuw">+ Nieuwe leverancier…</option>`;
+}
+
+async function arNieuweLeverancier() {
+  const naam = (prompt("Naam van de nieuwe leverancier") || "").trim();
+  if (!naam) return null;
+  const { data, error } = await sb.from("leveranciers").insert({ naam }).select("id, naam").single();
+  if (error) { melding(/duplicate|unique/.test(error.message) ? "Die leverancier bestaat al" : "Toevoegen lukte niet: " + error.message, true); return null; }
+  ar.leveranciers.push(data);
+  ar.leveranciers.sort((x, y) => x.naam.localeCompare(y.naam));
+  return data.id;
 }
 
 function arNieuwHtml() {
@@ -2912,6 +2940,7 @@ function arNieuwHtml() {
         <option value="grondstof">Per kg / bulk</option>
         <option value="verpakking">Eigen verpakking zonder label</option>
       </select></label>
+      <label class="veld">Leverancier<select id="arNLev">${arLevOpties((ar.leveranciers.find((l) => l.naam === "Odin") || {}).id)}</select></label>
       <button class="btn ok" type="submit">Toevoegen</button>
       <button class="btn stil" type="button" data-ar="nieuw-weg">Annuleren</button>
       <p class="ik-uitleg" style="flex-basis:100%;margin:0">Het PLU-nummer wordt automatisch gekozen. Eigen verpakkingen met een label maak je in de labelapp.</p>
@@ -2946,6 +2975,10 @@ async function arVeld(el) {
     w = Math.round(n * 100) / 100;
   }
   if (veld === "btw") w = Number(w);
+  if (veld === "leverancier_id") {
+    if (w === "__nieuw") { w = await arNieuweLeverancier(); if (!w) { el.value = a.leverancier_id || ""; return; } arTekenen(); }
+    w = w || null;
+  }
   if ((a[veld] ?? null) === w || String(a[veld] ?? "") === String(w ?? "")) return;
   if (await arBewaar(id, veld, w)) melding(veld === "prijs" ? "Prijs opgeslagen; de kassa's nemen hem binnen 10 minuten over" : "Opgeslagen");
 }
@@ -2971,6 +3004,7 @@ async function arNieuw(e) {
   const plu = Math.max(89999, max ? max.plu : 0) + 1;
   const { data, error } = await sb.from("artikelen").insert({
     soort: $("arNSoort").value, naam, prijs: Math.round(prijs * 100) / 100, ean, btw: Number($("arNBtw").value), plu,
+    leverancier_id: $("arNLev").value && $("arNLev").value !== "__nieuw" ? $("arNLev").value : null,
   }).select("id, soort, naam, plu, ean, prijs, btw, actief, uit_kassa, label_verpakking_id, leverancier_id, inhoud_tekst, notitie, aangemaakt_op").single();
   if (error) { melding(/ean_uniek|duplicate/.test(error.message) ? "Deze barcode hoort al bij een ander artikel" : "Toevoegen lukte niet: " + error.message, true); return; }
   ar.lijst.unshift(data);
@@ -3001,6 +3035,8 @@ $("artikelen").addEventListener("change", (e) => {
   if (t.dataset.ar === "kies") { const id = t.closest("tr").dataset.id; t.checked ? ar.gekozen.add(id) : ar.gekozen.delete(id); arTekenen(); return; }
   if (t.dataset.ar === "alles") { const zicht = arGefilterd().slice(0, 300); zicht.forEach((a) => t.checked ? ar.gekozen.add(a.id) : ar.gekozen.delete(a.id)); arTekenen(); return; }
   if (t.id === "arSoort") { ar.soort = t.value; arTekenen(); return; }
+  if (t.id === "arLev") { ar.leverancier = t.value; ar.gekozen.clear(); arTekenen(); return; }
+  if (t.id === "arNLev" && t.value === "__nieuw") { arNieuweLeverancier().then((id) => { const s = $("arNLev"); if (!s) return; s.innerHTML = arLevOpties(id); }); return; }
   if (t.id === "arInactief") { ar.inactief = t.checked; ar.gekozen.clear(); arTekenen(); return; }
   if (t.dataset.arVeld) arVeld(t);
 });

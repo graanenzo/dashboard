@@ -2883,7 +2883,7 @@ function arRij(a) {
       <td><input type="checkbox" data-ar="kies" ${ar.gekozen.has(a.id) ? "checked" : ""} aria-label="Kiezen"></td>
       <td class="n">${a.plu ?? "–"}</td>
       <td>${sticker
-          ? `<span title="Naam en prijs komen uit de stickerapp">${esc(a.naam)} <span class="chip">sticker</span></span>`
+          ? `<span title="Naam en prijs komen uit de labelapp">${esc(a.naam)} <span class="chip">label</span></span>`
           : `<input value="${esc(a.naam)}" data-ar-veld="naam" aria-label="Naam">`}
           ${a.uit_kassa ? `<span class="chip vandaag" title="${esc(a.notitie || "")}">uit kassa</span>` : ""}</td>
       <td>${sticker ? `<span class="mono">${esc(a.ean || "")}</span>` : `<input class="ean" value="${esc(a.ean || "")}" data-ar-veld="ean" inputmode="numeric" placeholder="scan…" aria-label="Barcode">`}</td>
@@ -2910,11 +2910,11 @@ function arNieuwHtml() {
       <label class="veld">Soort<select id="arNSoort">
         <option value="handelsartikel">Ingekocht (per stuk)</option>
         <option value="grondstof">Per kg / bulk</option>
-        <option value="verpakking">Eigen verpakking zonder sticker</option>
+        <option value="verpakking">Eigen verpakking zonder label</option>
       </select></label>
       <button class="btn ok" type="submit">Toevoegen</button>
       <button class="btn stil" type="button" data-ar="nieuw-weg">Annuleren</button>
-      <p class="ik-uitleg" style="flex-basis:100%;margin:0">Het PLU-nummer wordt automatisch gekozen. Eigen verpakkingen met een sticker maak je in de stickerapp.</p>
+      <p class="ik-uitleg" style="flex-basis:100%;margin:0">Het PLU-nummer wordt automatisch gekozen. Eigen verpakkingen met een label maak je in de labelapp.</p>
     </form>`;
 }
 

@@ -2558,7 +2558,7 @@ async function ikTellingOpslaan() {
 
 function ikArtikelenTekenen() {
   const el = $("ikArtikelen");
-  const odin = ik.artikelen.filter((a) => ik.odinId && a.leverancier_id === ik.odinId);
+  const odin = ik.artikelen.filter((a) => ik.odinId && a.leverancier_id === ik.odinId && a.leverancier_artnr);
   const zonder = odin.filter((a) => !a.ean).length;
   let lijst = ik.zoek.trim() ? odin.filter((a) => ikZoekArtikelen(ik.zoek).includes(a)) : odin;
   if (ik.artFilter === "zonder") lijst = lijst.filter((a) => !a.ean);

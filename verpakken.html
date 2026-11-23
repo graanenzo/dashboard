@@ -405,6 +405,7 @@ ul.ik-regels { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
 .ar-select { font: inherit; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
 .ar-check { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; font-size: 0.9rem; }
 .mono { font-family: var(--font-mono); }
+.mono.stil { color: var(--muted, #8a8172); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -2893,7 +2894,7 @@ function arTekenen() {
 // Winkelcode zoals labelapp en kassa die maken: "20" + PLU (5) + prijs in centen (5) + controlecijfer.
 // Wordt niet opgeslagen: bij een nieuwe prijs verandert de code mee.
 function arWinkelcode(a) {
-  if (a.ean || a.plu == null || a.soort !== "verpakking") return null;
+  if (a.ean || a.plu == null || (a.soort !== "verpakking" && !a.label_verpakking_id)) return null;
   const centen = Math.round(Number(a.prijs) * 100);
   if (!(centen > 0) || a.plu > 99999 || centen > 99999) return null;
   const basis = "20" + String(a.plu).padStart(5, "0") + String(centen).padStart(5, "0");
@@ -2914,7 +2915,7 @@ function arRij(a) {
           ? `<span title="Naam en prijs komen uit de labelapp">${esc(a.naam)} <span class="chip">label</span></span>`
           : `<input value="${esc(a.naam)}" data-ar-veld="naam" aria-label="Naam">`}
           ${a.uit_kassa ? `<span class="chip vandaag" title="${esc(a.notitie || "")}">uit kassa</span>` : ""}</td>
-      <td>${sticker ? `<span class="mono">${esc(a.ean || "")}</span>` : `<input class="ean" value="${esc(a.ean || "")}" data-ar-veld="ean" inputmode="numeric" placeholder="${arWinkelcode(a) || "scan…"}" ${arWinkelcode(a) ? 'title="Winkelcode uit PLU en prijs; de kassa en labelapp maken deze automatisch. Scan alleen als er een fabriekscode op zit."' : ""} aria-label="Barcode">`}</td>
+      <td>${sticker ? (a.ean ? `<span class="mono">${esc(a.ean)}</span>` : arWinkelcode(a) ? `<span class="mono stil" title="Winkelcode op het label: PLU en prijs">${arWinkelcode(a)}</span>` : "") : `<input class="ean" value="${esc(a.ean || "")}" data-ar-veld="ean" inputmode="numeric" placeholder="${arWinkelcode(a) || "scan…"}" ${arWinkelcode(a) ? 'title="Winkelcode uit PLU en prijs; de kassa en labelapp maken deze automatisch. Scan alleen als er een fabriekscode op zit."' : ""} aria-label="Barcode">`}</td>
       <td class="n">${sticker ? ikEuro(a.prijs) : `<input class="ar-prijs" value="${a.prijs != null ? String(a.prijs).replace(".", ",") : ""}" data-ar-veld="prijs" inputmode="decimal" aria-label="Prijs">`}${kg ? "/kg" : ""}</td>
       <td><select data-ar-veld="btw" aria-label="Btw">${[0, 9, 21].map((b) => `<option value="${b}" ${Number(a.btw) === b ? "selected" : ""}>${b}%</option>`).join("")}</select></td>
       <td>${sticker ? arSoortNaam(a) : `<select data-ar-veld="soort" aria-label="Soort">${Object.entries(AR_SOORT).map(([k, t]) => `<option value="${k}" ${a.soort === k ? "selected" : ""}>${k === "grondstof" && arLos(a) ? "Los per kg" : t}</option>`).join("")}</select>`}</td>

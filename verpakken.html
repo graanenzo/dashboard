@@ -2772,7 +2772,11 @@ const AR_FILTERS = [
   { id: "geenprijs", label: "Geen of € 0 prijs" },
   { id: "geencode", label: "Geen barcode" },
 ];
-const AR_SOORT = { verpakking: "Eigen verpakking", handelsartikel: "Ingekocht", grondstof: "Per kg / bulk", mengsel: "Mengsel" };
+const AR_SOORT = { verpakking: "Eigen verpakking", handelsartikel: "Ingekocht", grondstof: "Grondstof", mengsel: "Mengsel" };
+// Grondstof met een PLU = wordt los per kg verkocht (noten, zuidvruchten); zonder PLU = wordt verpakt.
+const arLos = (a) => a.soort === "grondstof" && a.plu != null;
+const arSoortNaam = (a) => arLos(a) ? "Los per kg" : AR_SOORT[a.soort];
+const AR_SOORT_FILTER = { verpakking: "Eigen verpakking", handelsartikel: "Ingekocht", los: "Los per kg", grondstof: "Grondstof (wordt verpakt)", mengsel: "Mengsel" };
 
 async function arOpenen() {
   if (!ar.geladen) { $("arInhoud").innerHTML = `<div class="ik-bezig">Artikelen laden…</div>`; await arLaden(); }
@@ -2814,7 +2818,9 @@ function arDubbelen() {
 
 function arGefilterd() {
   let l = ar.lijst.filter((a) => ar.inactief ? !a.actief : a.actief);
-  if (ar.soort) l = l.filter((a) => a.soort === ar.soort);
+  if (ar.soort === "los") l = l.filter(arLos);
+  else if (ar.soort === "grondstof") l = l.filter((a) => a.soort === "grondstof" && !arLos(a));
+  else if (ar.soort) l = l.filter((a) => a.soort === ar.soort);
   if (ar.leverancier === "geen") l = l.filter((a) => !a.leverancier_id);
   else if (ar.leverancier) l = l.filter((a) => a.leverancier_id === ar.leverancier);
   const nu = Date.now();
@@ -2854,7 +2860,7 @@ function arTekenen() {
       <input id="arZoek" placeholder="Zoek op naam, PLU of barcode" value="${esc(ar.zoek)}" autocomplete="off">
       <select id="arSoort" class="ar-select">
         <option value="">Alle soorten</option>
-        ${Object.entries(AR_SOORT).map(([k, v]) => `<option value="${k}" ${ar.soort === k ? "selected" : ""}>${v}</option>`).join("")}
+        ${Object.entries(AR_SOORT_FILTER).map(([k, v]) => `<option value="${k}" ${ar.soort === k ? "selected" : ""}>${v}</option>`).join("")}
       </select>
       <select id="arLev" class="ar-select">
         <option value="">Alle leveranciers</option>
@@ -2900,7 +2906,7 @@ function arRij(a) {
       <td>${sticker ? `<span class="mono">${esc(a.ean || "")}</span>` : `<input class="ean" value="${esc(a.ean || "")}" data-ar-veld="ean" inputmode="numeric" placeholder="scan…" aria-label="Barcode">`}</td>
       <td class="n">${sticker ? ikEuro(a.prijs) : `<input class="ar-prijs" value="${a.prijs != null ? String(a.prijs).replace(".", ",") : ""}" data-ar-veld="prijs" inputmode="decimal" aria-label="Prijs">`}${kg ? "/kg" : ""}</td>
       <td><select data-ar-veld="btw" aria-label="Btw">${[0, 9, 21].map((b) => `<option value="${b}" ${Number(a.btw) === b ? "selected" : ""}>${b}%</option>`).join("")}</select></td>
-      <td>${sticker ? AR_SOORT[a.soort] : `<select data-ar-veld="soort" aria-label="Soort">${Object.entries(AR_SOORT).map(([k, t]) => `<option value="${k}" ${a.soort === k ? "selected" : ""}>${t}</option>`).join("")}</select>`}</td>
+      <td>${sticker ? arSoortNaam(a) : `<select data-ar-veld="soort" aria-label="Soort">${Object.entries(AR_SOORT).map(([k, t]) => `<option value="${k}" ${a.soort === k ? "selected" : ""}>${k === "grondstof" && arLos(a) ? "Los per kg" : t}</option>`).join("")}</select>`}</td>
       <td><select data-ar-veld="leverancier_id" aria-label="Leverancier">${arLevOpties(a.leverancier_id)}</select></td>
       <td class="n">${vr == null ? "–" : ikGetal(vr) + (kg ? " kg" : "")}</td>
       <td class="n">${v ? arDatum(v.laatst_verkocht) : "–"}</td>
@@ -2937,7 +2943,7 @@ function arNieuwHtml() {
       <label class="veld smal">Btw<select id="arNBtw"><option>9</option><option>21</option><option>0</option></select></label>
       <label class="veld">Soort<select id="arNSoort">
         <option value="handelsartikel">Ingekocht (per stuk)</option>
-        <option value="grondstof">Per kg / bulk</option>
+        <option value="grondstof">Los per kg (noten, zuidvruchten)</option>
         <option value="verpakking">Eigen verpakking zonder label</option>
       </select></label>
       <label class="veld">Leverancier<select id="arNLev">${arLevOpties((ar.leveranciers.find((l) => l.naam === "Odin") || {}).id)}</select></label>

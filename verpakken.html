@@ -1979,16 +1979,18 @@ async function ikOpenen() {
 }
 
 async function ikLaden() {
-  let art, vr;
+  let art, vr, ink;
   const lev = await sb.from("leveranciers").select("id").eq("naam", "Odin").maybeSingle();
   try {
-    [art, vr] = await Promise.all([
+    [art, vr, ink] = await Promise.all([
       sbAlles(() => sb.from("artikelen").select("id, soort, naam, ean, plu, leverancier_id, leverancier_artnr, besteleenheid, inhoud_tekst, netto_gram, adviesprijs, inkoopprijs, btw, eigen_voorraad").eq("actief", true).order("naam").order("id")),
       sbAlles(() => sb.from("v_voorraad").select("artikel_id, voorraad").order("artikel_id")),
+      sbAlles(() => sb.from("v_artikel_inkoop").select("artikel_id, laatst_besteld, keer_besteld").order("artikel_id")),
     ]);
   } catch (e) { melding("Artikelen laden lukte niet: " + (e.message || e), true); return; }
   ik.artikelen = art;
   ik.voorraad = new Map(vr.map((v) => [v.artikel_id, Number(v.voorraad)]));
+  ik.inkoop = new Map(ink.map((v) => [v.artikel_id, v]));
   ik.odinId = lev.data ? lev.data.id : null;
   ik.geladen = true;
 }
@@ -2558,6 +2560,13 @@ async function ikTellingOpslaan() {
 
 // ------------------------------------------------------------ Odin-artikelen
 
+function ikLaatstBesteld(id) {
+  const b = ik.inkoop && ik.inkoop.get(id);
+  if (!b || !b.laatst_besteld) return "–";
+  const d = new Date(b.laatst_besteld).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "2-digit" });
+  return `<span title="${b.keer_besteld}× besteld">${d}</span>${b.keer_besteld > 1 ? ` <span class="ik-sub">${b.keer_besteld}×</span>` : ""}`;
+}
+
 function ikArtikelenTekenen() {
   const el = $("ikArtikelen");
   const odin = ik.artikelen.filter((a) => ik.odinId && a.leverancier_id === ik.odinId && a.leverancier_artnr);
@@ -2574,7 +2583,7 @@ function ikArtikelenTekenen() {
     </div>
     <p class="ik-uitleg" style="margin-bottom:10px">Klik in een naam of barcode om die te wijzigen; scannen in het barcodeveld kan ook. Barcodes worden ook gekoppeld als je ze bij een levering of telling scant.</p>
     <div class="ik-tabelwrap"><table class="ik-tabel">
-      <thead><tr><th>Naam</th><th>Odin-nr</th><th>Barcode</th><th class="n">Per doos</th><th class="n">Inkoop</th><th class="n">Advies</th><th class="n">Voorraad</th></tr></thead>
+      <thead><tr><th>Naam</th><th>Odin-nr</th><th>Barcode</th><th class="n">Per doos</th><th class="n">Inkoop</th><th class="n">Advies</th><th class="n">Voorraad</th><th class="n">Laatst besteld</th></tr></thead>
       <tbody>${lijst.slice(0, 400).map((a) => `
         <tr data-id="${a.id}">
           <td><input value="${esc(a.naam)}" data-ik-veld="naam" aria-label="Naam"></td>
@@ -2584,6 +2593,7 @@ function ikArtikelenTekenen() {
           <td class="n">${ikEuro(a.inkoopprijs)}</td>
           <td class="n">${ikEuro(a.adviesprijs)}</td>
           <td class="n">${ikGetal(ik.voorraad.get(a.id) ?? 0)}${a.soort === "grondstof" ? " kg" : ""}</td>
+          <td class="n">${ikLaatstBesteld(a.id)}</td>
         </tr>`).join("")}</tbody>
     </table></div>
     ${lijst.length > 400 ? `<p class="ik-uitleg">Eerste 400 van ${lijst.length}; zoek om te verfijnen.</p>` : ""}`;

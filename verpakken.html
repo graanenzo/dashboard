@@ -2774,7 +2774,7 @@ const AR_FILTERS = [
 ];
 const AR_SOORT = { verpakking: "Eigen verpakking", handelsartikel: "Ingekocht", grondstof: "Grondstof", mengsel: "Mengsel" };
 // Grondstof met een PLU = wordt los per kg verkocht (noten, zuidvruchten); zonder PLU = wordt verpakt.
-const arLos = (a) => a.soort === "grondstof" && a.plu != null;
+const arLos = (a) => a.soort === "grondstof" && a.plu != null && !a.uit_kassa;
 const arSoortNaam = (a) => arLos(a) ? "Los per kg" : AR_SOORT[a.soort];
 const AR_SOORT_FILTER = { verpakking: "Eigen verpakking", handelsartikel: "Ingekocht", los: "Los per kg", grondstof: "Grondstof (wordt verpakt)", mengsel: "Mengsel" };
 

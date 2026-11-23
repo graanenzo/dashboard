@@ -332,6 +332,68 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
   #pakbon .pb-pagina { break-after: page; }
   #pakbon .pb-pagina:last-child { break-after: auto; }
 }
+/* Inkoop & voorraad */
+#inkoop { padding-bottom: 64px; }
+.ik-kaart { background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; }
+.ik-upload { border: 2px dashed var(--line); border-radius: 12px; padding: 28px 18px; text-align: center; display: grid; gap: 12px; justify-items: center; background: var(--paper); }
+.ik-upload.over { border-color: var(--graan); background: var(--graan-soft); }
+.ik-upload strong { font-family: var(--font-display); font-size: 1.3rem; }
+.ik-upload .rij { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.ik-upload label.btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.ik-upload input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.ik-kop { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; }
+.ik-kop h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; margin: 0; }
+.ik-kop span { color: var(--muted); }
+.ik-scan { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 0; }
+.ik-scan input { flex: 1 1 220px; min-width: 0; font: inherit; font-size: 1.1rem; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); }
+.ik-scan input:focus { border-color: var(--graan); }
+.ik-wacht { padding: 12px 14px; border-radius: 10px; background: var(--busy-soft); color: var(--ink); border-left: 5px solid var(--busy); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.ik-wacht b { font-family: var(--font-mono); }
+.ik-samen { display: flex; flex-wrap: wrap; gap: 8px; }
+.ik-samen .ps { font-size: 0.85rem; }
+.ik-samen .ps.warn { background: var(--warn-soft); color: var(--warn); }
+.ik-samen .ps.busy { background: var(--busy-soft); color: var(--busy); }
+ul.ik-regels { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ik-regel { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; background: var(--paper); border: 1.5px solid var(--line); border-left: 6px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.ik-regel.ok { border-left-color: var(--ok); }
+.ik-regel.minder { border-left-color: var(--graan); }
+.ik-regel.meer { border-left-color: var(--warn); }
+.ik-regel.overslaan { opacity: .55; }
+.ik-regel.kiesbaar { cursor: pointer; outline: 2px dashed var(--busy); outline-offset: -2px; }
+.ik-regel.flits { animation: ikflits .6s; }
+@keyframes ikflits { from { background: var(--ok-soft); } to { background: var(--paper); } }
+.ik-naam { font-weight: 700; overflow-wrap: anywhere; }
+.ik-sub { font-size: 0.85rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.ik-sub .mono { font-family: var(--font-mono); }
+.ik-sub .nieuw { color: var(--busy); font-weight: 700; }
+.ik-sub .geenean { color: var(--graan-ink); font-weight: 700; }
+.ik-sub .let { color: var(--warn); font-weight: 700; }
+.ik-tel { display: flex; align-items: center; gap: 6px; }
+.ik-tel button { width: 40px; height: 40px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font-size: 1.2rem; font-weight: 700; }
+.ik-tel input { width: 64px; text-align: center; font: inherit; font-family: var(--font-mono); font-size: 1.1rem; padding: 8px 4px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.ik-tel .van { font-family: var(--font-mono); color: var(--muted); white-space: nowrap; }
+.ik-acties { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.ik-acties .btn { padding: 6px 10px; font-size: 0.85rem; }
+.ik-voet { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; border-top: 1.5px solid var(--line); }
+.ik-voet .btn { flex: 0 0 auto; }
+.ik-voet .ruimte { flex: 1; }
+.ik-tabel { width: 100%; border-collapse: collapse; background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 0.92rem; }
+.ik-tabel th, .ik-tabel td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.ik-tabel th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--bg); }
+.ik-tabel td.n { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+.ik-tabel input { font: inherit; padding: 6px 8px; border: 1.5px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); width: 100%; min-width: 0; }
+.ik-tabel input:hover, .ik-tabel input:focus { border-color: var(--line); background: var(--bg); }
+.ik-tabel input.ean { font-family: var(--font-mono); width: 15ch; }
+.ik-tabelwrap { overflow-x: auto; }
+.ik-zoek { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.ik-zoek input { flex: 1 1 220px; font: inherit; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.ik-bezig { display: flex; gap: 10px; align-items: center; color: var(--muted); padding: 24px 4px; }
+.ik-bezig::before { content: ""; width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--graan); animation: ikdraai 1s linear infinite; }
+@keyframes ikdraai { to { transform: rotate(360deg); } }
+.ik-resultaten { display: grid; gap: 4px; margin-top: -4px; }
+.ik-resultaten button { text-align: left; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 8px; padding: 8px 10px; }
+.ik-resultaten button:hover { border-color: var(--ink); }
+.ik-uitleg { color: var(--muted); font-size: 0.9rem; margin: 0; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -445,6 +507,17 @@ ul.regels.ob-regels li { grid-template-columns: 24px 3.4ch 1fr; padding: 5px 16p
       </div>
       <div id="mepInhoud"></div>
       <p class="sm-uitleg">Is iets (bijna) op? Klik op <b>Overdragen</b> en schrijf erbij hoeveel er nog is. Dan staat het de volgende openingsdag op de lijst.</p>
+    </section>
+    <section id="inkoop" hidden>
+      <a class="terug" href="#winkel">← Alle onderdelen</a>
+      <nav class="tabs" id="ikTabs" aria-label="Onderdeel">
+        <button type="button" data-iktab="levering" aria-pressed="true">Levering inlezen</button>
+        <button type="button" data-iktab="tellen" aria-pressed="false">Tellen</button>
+        <button type="button" data-iktab="artikelen" aria-pressed="false">Odin-artikelen</button>
+      </nav>
+      <div id="ikLevering"></div>
+      <div id="ikTellen" hidden></div>
+      <div id="ikArtikelen" hidden></div>
     </section>
     <section id="binnenkort" hidden>
       <a class="terug" href="#magazijn">← Alle onderdelen</a>
@@ -900,7 +973,7 @@ const ONDERDELEN = [
   { id: "webbestellingen", naam: "Webbestellingen", uitleg: "Bestellingen uit de webshop inpakken", klaar: true },
   { id: "overige-bestellingen", naam: "Overige bestellingen", uitleg: "Bestellingen van vaste klanten per mail", klaar: true, overig: true },
   { id: "mengen", naam: "Mengen", uitleg: "Mengsels maken en afvinken", klaar: true, taak: true },
-  { id: "winkel-inkoop", afdeling: "winkel", naam: "Inkoop", uitleg: "Inkoop voor de winkel" },
+  { id: "winkel-inkoop", afdeling: "winkel", naam: "Inkoop & voorraad", uitleg: "Odin-levering inlezen en controleren, voorraad tellen", klaar: true, inkoop: true },
   { id: "winkel-schoonmaak", afdeling: "winkel", naam: "Schoonmaak", uitleg: "Schoonmaakrooster winkel afvinken", klaar: true, schoonmaak: true },
   { id: "restaurant-schoonmaak", afdeling: "restaurant", naam: "Schoonmaak", uitleg: "Schoonmaakrooster bediening afvinken", klaar: true, schoonmaak: true },
   { id: "restaurant-mep", afdeling: "restaurant", naam: "Mise en place", uitleg: "Mise en place afvinken en overdragen", klaar: true, mep: true },
@@ -928,6 +1001,8 @@ function tegelsTekenen() {
           ? `<span class="teller ${mepOpenAantal ? "" : "nul"}">${mepOpenAantal}</span><span class="teller-label">nog te doen ${mepDagNaam(mepVandaag())}</span>`
           : o.schoonmaak
           ? `<span class="teller-label">Rooster afvinken</span>`
+          : o.inkoop
+          ? `<span class="teller-label">Levering · tellen · artikelen</span>`
           : `<span class="teller-label">Binnenkort</span>`}
     </a>`).join("");
 }
@@ -954,11 +1029,13 @@ function route() {
   $("mep").hidden = !(o && o.mep);
   $("overig").hidden = !(o && o.overig);
   if (o && o.overig) obTekenen();
-  $("binnenkort").hidden = !(o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && o.id !== "webbestellingen");
+  $("inkoop").hidden = !(o && o.inkoop);
+  if (o && o.inkoop) ikOpenen();
+  $("binnenkort").hidden = !(o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && !o.inkoop && o.id !== "webbestellingen");
   if (o && o.mep) { mepDatum = mepVandaag(); mepLaden(); }
   if (o && o.schoonmaak) { smAfdeling = o.afdeling; smLaden(); }
   $("sectienaam").textContent = o ? o.naam : naam;
-  if (o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && o.id !== "webbestellingen") $("binnenkortTitel").textContent = o.naam;
+  if (o && !o.taak && !o.schoonmaak && !o.mep && !o.overig && !o.inkoop && o.id !== "webbestellingen") $("binnenkortTitel").textContent = o.naam;
   if (o && o.taak) {
     huidigeSoort = o.id;
     if (!$("taakDatum").value) $("taakDatum").value = vandaagIso();
@@ -1831,6 +1908,807 @@ $("loginForm").addEventListener("submit", async (e) => {
 $("uitloggen").addEventListener("click", async () => { await sb.auth.signOut(); toonLogin(); });
 
 window.addEventListener("focus", () => { if (!$("app").hidden) { laden(); obLaden(); } });
+
+// ============================================================ Inkoop & voorraad
+// Levering van Odin inlezen (afleverbon als PDF of foto), controleren door te
+// scannen of te tellen, en boeken als ontvangst. Daarnaast: voorraad tellen en
+// de Odin-artikelen bijhouden (namen, barcodes).
+
+const IK_PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs";
+const IK_PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+
+const ik = {
+  tab: "levering",
+  geladen: false,
+  artikelen: [],
+  odinId: null,
+  voorraad: new Map(),
+  levering: null,      // concept van de levering die nu gecontroleerd wordt
+  bezig: "",           // tekst tijdens inlezen
+  wachtEan: null,      // gescande barcode die nog aan een regel gekoppeld moet worden
+  telling: [],         // [{ artikel_id, geteld }]
+  tellingWachtEan: null,
+  zoek: "",
+  telZoek: "",
+  artFilter: "alle",
+};
+try {
+  ik.levering = JSON.parse(localStorage.getItem("gz-ik-levering") || "null");
+  ik.telling = JSON.parse(localStorage.getItem("gz-ik-telling") || "[]");
+} catch (e) {}
+
+function ikBewaar() {
+  try {
+    if (ik.levering) localStorage.setItem("gz-ik-levering", JSON.stringify(ik.levering));
+    else localStorage.removeItem("gz-ik-levering");
+    localStorage.setItem("gz-ik-telling", JSON.stringify(ik.telling));
+  } catch (e) {}
+}
+
+const ikNorm = (c) => String(c || "").replace(/\D/g, "").replace(/^0+/, "");
+const ikEuro = (n) => n == null ? "–" : Number(n).toLocaleString("nl-NL", { style: "currency", currency: "EUR" });
+const ikGetal = (n) => n == null ? "–" : Number(n).toLocaleString("nl-NL", { maximumFractionDigits: 2 });
+const ikArtikel = (id) => ik.artikelen.find((a) => a.id === id);
+const ikOpEan = (code) => { const n = ikNorm(code); return n ? ik.artikelen.find((a) => a.ean && ikNorm(a.ean) === n) : null; };
+
+async function ikOpenen() {
+  ikTabsTekenen();
+  if (!ik.geladen) await ikLaden();
+  ikTekenen();
+}
+
+async function ikLaden() {
+  const [art, vr, lev] = await Promise.all([
+    sb.from("artikelen").select("id, soort, naam, ean, plu, leverancier_id, leverancier_artnr, besteleenheid, inhoud_tekst, netto_gram, adviesprijs, inkoopprijs, btw, eigen_voorraad").eq("actief", true).order("naam").limit(5000),
+    sb.from("v_voorraad").select("artikel_id, voorraad").limit(5000),
+    sb.from("leveranciers").select("id").eq("naam", "Odin").maybeSingle(),
+  ]);
+  if (art.error || vr.error) { melding("Artikelen laden lukte niet: " + (art.error || vr.error).message, true); return; }
+  ik.artikelen = art.data;
+  ik.voorraad = new Map(vr.data.map((v) => [v.artikel_id, Number(v.voorraad)]));
+  ik.odinId = lev.data ? lev.data.id : null;
+  ik.geladen = true;
+}
+
+function ikTabsTekenen() {
+  document.querySelectorAll("[data-iktab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.iktab === ik.tab)));
+  $("ikLevering").hidden = ik.tab !== "levering";
+  $("ikTellen").hidden = ik.tab !== "tellen";
+  $("ikArtikelen").hidden = ik.tab !== "artikelen";
+}
+
+function ikTekenen() {
+  ikTabsTekenen();
+  if (!ik.geladen) { $("ik" + ik.tab.charAt(0).toUpperCase() + ik.tab.slice(1)).innerHTML = `<div class="ik-bezig">Artikelen laden…</div>`; return; }
+  if (ik.tab === "levering") ikLeveringTekenen();
+  if (ik.tab === "tellen") ikTellenTekenen();
+  if (ik.tab === "artikelen") ikArtikelenTekenen();
+}
+
+// ------------------------------------------------------------ afleverbon lezen
+
+// Leest een Odin-afleverbon uit de tekstitems van pdf.js ([{ page, x, y, str }]).
+// De kolommen komen per pagina uit de kopregel, want Odin stuurt bonnen met
+// verschillende paginabreedtes. Aantallen en prijzen worden rond de SVE-kolom
+// ("6 STUKS a 400 GRAM") gezocht.
+function odinAfleverbonLezen(items) {
+  const bedragNum = (s) => parseFloat(String(s).replace(/\./g, "").replace(",", "."));
+  const getal = (s) => parseFloat(String(s).replace(",", "."));
+  const alle = items.filter((i) => i.str && i.str.trim()).map((i) => ({ ...i, str: i.str.trim() }));
+  const tekst = alle.map((i) => i.str).join(" ");
+  if (!/Odin/i.test(tekst)) throw new Error("Dit lijkt geen bon van Odin.");
+  if (!/Afleverbon/i.test(tekst)) {
+    if (/Factuur/i.test(tekst)) throw new Error("Dit is een factuur. Gebruik de afleverbon: daarop staat hoeveel stuks er in een doos zitten.");
+    throw new Error("Dit lijkt geen afleverbon van Odin.");
+  }
+  const kop = {};
+  for (const it of alle) {
+    const k = (kop[it.page] = kop[it.page] || {});
+    if (it.str === "Leverancier" && k.lev == null) k.lev = it.x;
+    if (it.str === "KM" && k.km == null) k.km = it.x;
+    if (it.str === "Lnd" && k.lnd == null) k.lnd = it.x;
+  }
+  const grens = (page) => {
+    const k = kop[page] || kop[1] || {};
+    return { lev: (k.lev ?? 159) - 3, km: (k.km ?? 231) - 9, lnd: (k.lnd ?? 249) - 2 };
+  };
+  const rijen = [];
+  const gesorteerd = [...alle].sort((a, b) => a.page - b.page || b.y - a.y || a.x - b.x);
+  for (const it of gesorteerd) {
+    const r = rijen.find((r) => r.page === it.page && Math.abs(r.y - it.y) <= 2.5);
+    if (r) r.items.push(it); else rijen.push({ page: it.page, y: it.y, items: [it] });
+  }
+  rijen.forEach((r) => r.items.sort((a, b) => a.x - b.x));
+  const naLabel = (label) => {
+    const l = alle.find((i) => i.str.startsWith(label));
+    if (!l) return null;
+    const rest = l.str.slice(label.length).trim();
+    if (rest) return rest;
+    const r = alle.filter((i) => i.page === l.page && Math.abs(i.y - l.y) <= 2.5 && i.x > l.x).sort((a, b) => a.x - b.x)[0];
+    return r ? r.str : null;
+  };
+  const datum = naLabel("Afleverdatum:");
+  const m = datum && datum.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+  const afleverdatum = m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : null;
+
+  const SVE = /^(\d+)\s+([A-Z]+)\s+a\s+([\d.,]+)\s*([A-Z]*)/i;
+  const regels = [];
+  const orders = [];
+  const totalen = {};
+  let ordernr = null;
+  for (const r of rijen) {
+    const eerste = r.items[0].str;
+    const rijTekst = r.items.map((i) => i.str).join(" ");
+    if (/^Ordernr/i.test(eerste)) {
+      const n = rijTekst.match(/Ordernr\.?:?\s*(\d+)/i);
+      if (n) { ordernr = n[1]; if (!orders.includes(ordernr)) orders.push(ordernr); }
+      continue;
+    }
+    if (/^Inkoopwaarde/i.test(eerste)) {
+      // Verkoopwaarde ex btw van de order: daaruit volgt het btw-tarief.
+      const v = rijTekst.match(/Verkoopwaarde \(ex BTW\):\s*([\d.]+,\d{2})/i);
+      if (v) {
+        const eigen = regels.filter((g) => g.ordernr === ordernr && !g.kosten && g.advies_stuk);
+        const incl = eigen.reduce((s, g) => s + g.advies_stuk * g.stuks, 0);
+        const ex = bedragNum(v[1]);
+        const f = ex > 0 ? incl / ex : 0;
+        const btw = Math.abs(f - 1.09) < 0.01 ? 9 : Math.abs(f - 1.21) < 0.01 ? 21 : null;
+        for (const g of eigen) g.btw = btw ?? (/^(ECOCE|NATRU|---)/.test(g.km) ? 21 : 9);
+      }
+      continue;
+    }
+    const tot = rijTekst.match(/Order totaal:\s*([\d.]+,\d{2})/i);
+    if (tot && ordernr) totalen[ordernr] = bedragNum(tot[1]);
+
+    const artnr = eerste.match(/^(\*?)(\d{1,7})$/);
+    if (!artnr) continue;
+    const sveIdx = r.items.findIndex((i, n) => n > 0 && (SVE.test(i.str) || /^per\s+\w+/i.test(i.str)));
+    if (sveIdx < 0) continue;
+    const g = grens(r.page);
+    const links = r.items.slice(1, sveIdx);
+    const rechts = r.items.slice(sveIdx + 1);
+    let colliIdx = -1;
+    for (let n = links.length - 1; n >= 0; n--) if (/^\d+(,\d+)?$/.test(links[n].str)) { colliIdx = n; break; }
+    const colli = colliIdx >= 0 ? getal(links[colliIdx].str) : 1;
+    const tekstLinks = colliIdx >= 0 ? links.slice(0, colliIdx) : links;
+    const kol = (van, tot) => tekstLinks.filter((i) => i.x >= van && i.x < tot).map((i) => i.str).join(" ").trim();
+    let omschrijving = kol(0, g.lev);
+    let merk = kol(g.lev, g.km);
+    if (!merk && omschrijving.length > 25) { merk = omschrijving.slice(25).trim(); omschrijving = omschrijving.slice(0, 25).trim(); }
+    const km = kol(g.km, g.lnd);
+    const getallen = (rechts.map((i) => i.str).join(" ").match(/\d[\d.]*,\d{2}(?!\d)|\d+,\d{2}/g) || []).map(bedragNum);
+    const bedrag = getallen.length ? getallen[getallen.length - 1] : null;
+    const prijzen = getallen.slice(0, -1);
+    const sveTekst = r.items[sveIdx].str;
+    const s = sveTekst.match(SVE);
+    regels.push({
+      ordernr, artnr: artnr[2], kosten: !!artnr[1], omschrijving, merk, km,
+      colli: isNaN(colli) ? 0 : colli,
+      per_colli: s ? parseInt(s[1], 10) : 1,
+      verpakking: s ? s[2].toUpperCase() : sveTekst,
+      inhoud: s ? getal(s[3]) : null,
+      inhoud_eenheid: s ? s[4].toUpperCase() : "",
+      ink_colli: prijzen[0] ?? null,
+      ink_stuk: prijzen[1] ?? prijzen[0] ?? null,
+      advies_stuk: prijzen.length >= 3 ? prijzen[2] : null,
+      bedrag, btw: null,
+    });
+  }
+  if (!regels.length) throw new Error("Er zijn geen regels gevonden op deze afleverbon.");
+  const afwijkingen = [];
+  for (const o of orders) {
+    const som = regels.filter((g) => g.ordernr === o).reduce((s, g) => s + (g.bedrag || 0), 0);
+    if (totalen[o] != null && Math.abs(som - totalen[o]) > 0.02) afwijkingen.push(`Order ${o}: regels ${ikEuro(som)}, totaal op de bon ${ikEuro(totalen[o])}`);
+  }
+  return { afleverdatum, orders, regels, afwijkingen };
+}
+
+async function ikPdfjs() {
+  const pdfjs = await import(IK_PDFJS);
+  pdfjs.GlobalWorkerOptions.workerSrc = IK_PDFJS_WORKER;
+  return pdfjs;
+}
+
+async function ikPdfItems(file) {
+  const pdfjs = await ikPdfjs();
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const items = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    for (const it of tc.items) items.push({ page: p, x: it.transform[4], y: it.transform[5], str: it.str });
+  }
+  return { doc, items };
+}
+
+// Een gescande PDF (zonder tekst) als plaatjes, om via de foto-route te lezen.
+async function ikPdfAlsPlaatjes(doc) {
+  const uit = [];
+  for (let p = 1; p <= Math.min(doc.numPages, 6); p++) {
+    const page = await doc.getPage(p);
+    const vp = page.getViewport({ scale: 2 });
+    const c = document.createElement("canvas");
+    c.width = vp.width; c.height = vp.height;
+    await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+    uit.push(c.toDataURL("image/jpeg", 0.85).split(",")[1]);
+  }
+  return uit;
+}
+
+async function ikFotoVerkleinen(file) {
+  const bmp = await createImageBitmap(file);
+  const max = 2200;
+  const f = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * f); c.height = Math.round(bmp.height * f);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", 0.85).split(",")[1];
+}
+
+async function ikFotosLezen(plaatjes) {
+  const { data } = await sb.auth.getSession();
+  const r = await fetch(SUPABASE_URL + "/functions/v1/afleverbon-lezen", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + (data.session ? data.session.access_token : "") },
+    body: JSON.stringify({ afbeeldingen: plaatjes.map((d) => ({ type: "image/jpeg", data: d })) }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.fout || j.error || "De foto kon niet gelezen worden (" + r.status + ")");
+  const regels = (j.regels || []).map((g) => ({
+    ordernr: g.ordernr || null, artnr: String(g.artnr || "").replace(/\D/g, ""), kosten: !!g.kosten,
+    omschrijving: g.omschrijving || "", merk: g.merk || "", km: g.km || "",
+    colli: Number(g.colli) || 0, per_colli: Number(g.per_colli) || 1,
+    verpakking: g.verpakking || "", inhoud: g.inhoud == null ? null : Number(g.inhoud), inhoud_eenheid: (g.inhoud_eenheid || "").toUpperCase(),
+    ink_colli: g.ink_colli ?? null, ink_stuk: g.ink_stuk ?? null, advies_stuk: g.advies_stuk ?? null, bedrag: g.bedrag ?? null, btw: null,
+  })).filter((g) => g.artnr);
+  // Controle per regel: dozen × prijs per doos moet het regelbedrag zijn.
+  for (const g of regels) {
+    if (g.ink_colli != null && g.bedrag != null && Math.abs(g.colli * g.ink_colli - g.bedrag) > 0.05) g.controleer = true;
+  }
+  if (!regels.length) throw new Error("Op de foto zijn geen regels gevonden. Maak een scherpere foto, recht van boven.");
+  return { afleverdatum: j.afleverdatum || null, orders: j.orders || [], regels, afwijkingen: [] };
+}
+
+const IK_EENHEID = { GRAM: "g", GRA: "g", GR: "g", G: "g", ML: "ml", LITER: "l", L: "l", KILO: "kg", KG: "kg", STUKS: "st", STUK: "st", BUITEL: "zakjes", BUIT: "zakjes" };
+function ikNieuweNaam(g) {
+  const zin = (s) => { s = String(s || "").toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
+  const woorden = (s) => String(s || "").toLowerCase().replace(/(^|[\s&-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+  if (g.bulk) return zin(g.omschrijving);
+  const e = IK_EENHEID[g.inhoud_eenheid] ?? g.inhoud_eenheid.toLowerCase();
+  const inhoud = g.inhoud != null ? `${String(g.inhoud).replace(".", ",")} ${e}`.trim() : "";
+  const merk = g.merk && !/^DIVERS$/i.test(g.merk) ? ` (${woorden(g.merk)})` : "";
+  return `${zin(g.omschrijving)} ${inhoud}`.trim() + merk;
+}
+function ikInhoudTekst(g) {
+  if (g.bulk || g.inhoud == null) return null;
+  return `${String(g.inhoud).replace(".", ",")} ${IK_EENHEID[g.inhoud_eenheid] ?? g.inhoud_eenheid.toLowerCase()}`.trim();
+}
+
+// Zet de gelezen bon om in regels om te controleren.
+function ikLeveringMaken(bon, bron, bestand) {
+  const perArtnr = new Map();
+  let kosten = 0;
+  for (const g of bon.regels) {
+    if (g.kosten) { kosten++; continue; }
+    const bulk = /^(KILO|KG)$/.test(g.inhoud_eenheid) && g.inhoud >= 5;
+    const stuks = Math.round(g.colli * g.per_colli * 1000) / 1000;
+    const r = perArtnr.get(g.artnr);
+    if (r) { r.colli += g.colli; r.verwacht += stuks; if (g.controleer) r.controleer = true; continue; }
+    const art = ik.odinId ? ik.artikelen.find((a) => a.leverancier_id === ik.odinId && a.leverancier_artnr === g.artnr) : null;
+    perArtnr.set(g.artnr, {
+      artnr: g.artnr, omschrijving: g.omschrijving, merk: g.merk, km: g.km,
+      colli: g.colli, per_colli: g.per_colli, verpakking: g.verpakking, inhoud: g.inhoud, inhoud_eenheid: g.inhoud_eenheid,
+      bulk, factor: bulk ? g.inhoud : 1, verwacht: stuks,
+      ink_stuk: g.ink_stuk, advies_stuk: g.advies_stuk, btw: g.btw ?? 9,
+      artikel_id: art ? art.id : null, nieuwEan: null, geteld: null, overslaan: false, controleer: !!g.controleer,
+    });
+  }
+  const regels = [...perArtnr.values()];
+  regels.forEach((r) => { if (!r.artikel_id) r.nieuweNaam = ikNieuweNaam(r); });
+  return {
+    bron, bestand, afleverdatum: bon.afleverdatum, orders: bon.orders, afwijkingen: bon.afwijkingen || [], kosten,
+    referentie: [bon.afleverdatum, (bon.orders || []).join(",")].filter(Boolean).join(" ") || null,
+    regels,
+  };
+}
+
+async function ikBestandenGekozen(files) {
+  files = [...files];
+  if (!files.length) return;
+  if (!ik.geladen) await ikLaden();
+  ik.bezig = "Afleverbon lezen…";
+  ikLeveringTekenen();
+  try {
+    let bon, bron;
+    const pdf = files.find((f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name));
+    if (pdf) {
+      const { doc, items } = await ikPdfItems(pdf);
+      if (items.filter((i) => i.str.trim()).length < 20) {
+        ik.bezig = "Gescande PDF: tekst herkennen…";
+        ikLeveringTekenen();
+        bon = await ikFotosLezen(await ikPdfAlsPlaatjes(doc));
+        bron = "foto";
+      } else {
+        bon = odinAfleverbonLezen(items);
+        bron = "pdf";
+      }
+    } else {
+      ik.bezig = files.length > 1 ? `${files.length} foto's lezen…` : "Foto lezen…";
+      ikLeveringTekenen();
+      const plaatjes = [];
+      for (const f of files) plaatjes.push(await ikFotoVerkleinen(f));
+      bon = await ikFotosLezen(plaatjes);
+      bron = "foto";
+    }
+    if (bon.orders && bon.orders.length) {
+      const ref = [bon.afleverdatum, bon.orders.join(",")].filter(Boolean).join(" ");
+      const { data: al } = await sb.from("inkooporders").select("id, ontvangen_op").eq("referentie", ref).neq("status", "geannuleerd").maybeSingle();
+      if (al) {
+        ik.bezig = "";
+        melding("Deze afleverbon is al geboekt op " + new Date(al.ontvangen_op).toLocaleDateString("nl-NL"), true);
+        ikLeveringTekenen();
+        return;
+      }
+    }
+    ik.levering = ikLeveringMaken(bon, bron, pdf ? pdf.name : files.map((f) => f.name).join(", "));
+    ik.wachtEan = null;
+    ikBewaar();
+  } catch (e) {
+    melding(e.message || String(e), true);
+  }
+  ik.bezig = "";
+  ikLeveringTekenen();
+}
+
+// ------------------------------------------------------------ levering tekenen
+
+function ikRegelStatus(r) {
+  if (r.overslaan) return "overslaan";
+  if (r.geteld == null) return "";
+  if (Math.abs(r.geteld - r.verwacht) < 1e-9) return "ok";
+  return r.geteld < r.verwacht ? "minder" : "meer";
+}
+function ikRegelEan(r) {
+  const a = r.artikel_id ? ikArtikel(r.artikel_id) : null;
+  return (a && a.ean) || r.nieuwEan || null;
+}
+
+function ikLeveringTekenen() {
+  const el = $("ikLevering");
+  if (ik.bezig) { el.innerHTML = `<div class="ik-bezig">${esc(ik.bezig)}</div>`; return; }
+  const L = ik.levering;
+  if (!L) {
+    el.innerHTML = `
+      <div class="ik-upload" id="ikDrop">
+        <strong>Levering van Odin inlezen</strong>
+        <p class="ik-uitleg">Kies de afleverbon als PDF, of maak een foto van de papieren bon (meerdere foto's mag, één per pagina).</p>
+        <div class="rij">
+          <label class="btn primair">PDF of foto kiezen<input type="file" id="ikBestand" accept="application/pdf,image/*" multiple></label>
+          <label class="btn inpak">Foto maken<input type="file" id="ikCamera" accept="image/*" capture="environment" multiple></label>
+        </div>
+      </div>
+      <p class="ik-uitleg" style="margin-top:12px">Daarna scan je elk product of vul je de aantallen in. Pas bij <b>Boeken</b> gaat de voorraad omhoog, met wat er echt geleverd is.</p>`;
+    return;
+  }
+  const actief = L.regels.filter((r) => !r.overslaan);
+  const geteld = actief.filter((r) => r.geteld != null).length;
+  const verschil = actief.filter((r) => r.geteld != null && Math.abs(r.geteld - r.verwacht) > 1e-9).length;
+  const zonderEan = actief.filter((r) => !ikRegelEan(r)).length;
+  const nieuw = actief.filter((r) => !r.artikel_id).length;
+  const datum = L.afleverdatum ? new Date(L.afleverdatum + "T12:00:00").toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" }) : "datum onbekend";
+  const volgorde = [...L.regels].map((r, i) => ({ r, i })).sort((a, b) => {
+    const p = (x) => x.overslaan ? 3 : x.geteld == null ? 0 : ikRegelStatus(x) === "ok" ? 2 : 1;
+    return p(a.r) - p(b.r) || a.i - b.i;
+  });
+  el.innerHTML = `
+    <div class="ik-kaart">
+      <div class="ik-kop"><h2>Afleverbon ${esc(datum)}</h2><span>${L.orders && L.orders.length ? "orders " + esc(L.orders.join(", ")) : ""} · ${esc(L.bestand || "")}</span></div>
+      ${L.bron === "foto" ? `<div class="notitie" style="margin:0"><b>Gelezen van een foto</b>Controleer de aantallen extra goed; regels met <b>controleer</b> klopten niet met het regelbedrag.</div>` : ""}
+      ${(L.afwijkingen || []).length ? `<div class="notitie" style="margin:0"><b>Let op</b>${L.afwijkingen.map(esc).join("<br>")}</div>` : ""}
+      <div class="ik-samen">
+        <span class="ps">${actief.length} producten</span>
+        <span class="ps ${geteld === actief.length ? "ja" : ""}">${geteld} van ${actief.length} gecontroleerd</span>
+        ${verschil ? `<span class="ps warn">${verschil} met verschil</span>` : ""}
+        ${zonderEan ? `<span class="ps busy">${zonderEan} nog zonder barcode</span>` : ""}
+        ${nieuw ? `<span class="ps busy">${nieuw} nieuw artikel</span>` : ""}
+        ${L.kosten ? `<span class="ps">${L.kosten} kostenregels (krat, rolcontainer) niet meegeteld</span>` : ""}
+      </div>
+    </div>
+    <div class="ik-scan">
+      <input id="ikScan" inputmode="numeric" autocomplete="off" placeholder="Scan een product (of typ de barcode en Enter)" aria-label="Barcode scannen">
+    </div>
+    ${ik.wachtEan ? `<div class="ik-wacht">Barcode <b>${esc(ik.wachtEan)}</b> is nog onbekend. Tik hieronder op het product waar hij bij hoort. <button type="button" class="btn stil" data-ik="wacht-weg">Annuleren</button></div>` : ""}
+    <ul class="ik-regels" style="margin-top:10px">
+      ${volgorde.map(({ r, i }) => ikRegelHtml(r, i)).join("")}
+    </ul>
+    <div class="ik-voet">
+      <button type="button" class="btn stil" data-ik="lev-annuleren">Bon weggooien</button>
+      <span class="ruimte"></span>
+      <button type="button" class="btn inpak" data-ik="lev-alles">Rest klopt</button>
+      <button type="button" class="btn ok" data-ik="lev-boeken">Boeken</button>
+    </div>`;
+  const scan = $("ikScan");
+  if (scan && !document.activeElement?.closest?.(".ik-tel")) scan.focus({ preventScroll: true });
+}
+
+function ikRegelHtml(r, i) {
+  const a = r.artikel_id ? ikArtikel(r.artikel_id) : null;
+  const ean = ikRegelEan(r);
+  const naam = a ? a.naam : r.nieuweNaam;
+  const st = ikRegelStatus(r);
+  const eenheid = r.bulk ? `zak${r.verwacht === 1 ? "" : "ken"} à ${ikGetal(r.inhoud)} kg` : "st";
+  const kiesbaar = ik.wachtEan && !ean && !r.overslaan;
+  return `
+    <li class="ik-regel ${st} ${kiesbaar ? "kiesbaar" : ""}" data-ikregel="${i}" ${kiesbaar ? `data-ik="koppel" role="button" tabindex="0"` : ""}>
+      <div>
+        <div class="ik-naam">${esc(naam)}</div>
+        <div class="ik-sub">
+          <span class="mono">${esc(r.artnr)}</span>
+          <span>${ikGetal(r.colli)} × ${esc(r.per_colli + " " + r.verpakking.toLowerCase())}</span>
+          ${ean ? `<span class="mono">${esc(ean)}</span>` : `<span class="geenean">nog geen barcode</span>`}
+          ${!a ? `<span class="nieuw">nieuw artikel</span>` : ""}
+          ${r.controleer ? `<span class="let">controleer</span>` : ""}
+          ${r.advies_stuk != null ? `<span>advies ${ikEuro(r.advies_stuk)}</span>` : ""}
+        </div>
+      </div>
+      <div class="ik-tel">
+        <button type="button" data-ik="min" aria-label="Eén minder">−</button>
+        <input type="number" inputmode="decimal" min="0" step="1" value="${r.geteld ?? ""}" placeholder="?" data-ik-tel="${i}" aria-label="Geteld">
+        <button type="button" data-ik="plus" aria-label="Eén meer">+</button>
+        <span class="van">/ ${ikGetal(r.verwacht)} ${esc(eenheid)}</span>
+      </div>
+      <div class="ik-acties">
+        ${r.overslaan
+          ? `<button type="button" class="btn stil" data-ik="terug">Toch meenemen</button>`
+          : `<button type="button" class="btn stil" data-ik="klopt">Klopt</button>
+             <button type="button" class="btn stil" data-ik="nul">Niet geleverd</button>
+             ${!a ? `<button type="button" class="btn stil" data-ik="hernoem">Naam aanpassen</button>` : ""}
+             <button type="button" class="btn stil" data-ik="overslaan">Niet bijhouden</button>`}
+      </div>
+    </li>`;
+}
+
+function ikRegelBijwerken(i) {
+  const li = document.querySelector(`[data-ikregel="${i}"]`);
+  if (!li) return ikLeveringTekenen();
+  li.outerHTML = ikRegelHtml(ik.levering.regels[i], i);
+}
+
+async function ikLeveringScan(code) {
+  const L = ik.levering;
+  if (!L) return;
+  const n = ikNorm(code);
+  if (n.length < 6) { melding("Dat lijkt geen barcode: " + code, true); return; }
+  let i = L.regels.findIndex((r) => !r.overslaan && ikRegelEan(r) && ikNorm(ikRegelEan(r)) === n);
+  if (i < 0) {
+    const a = ikOpEan(n);
+    if (a) {
+      i = L.regels.findIndex((r) => r.artikel_id === a.id);
+      if (i < 0) { melding(`${a.naam} staat niet op deze afleverbon`, true); return; }
+    }
+  }
+  if (i < 0) {
+    ik.wachtEan = code.replace(/\D/g, "");
+    melding("Onbekende barcode: tik op het product in de lijst");
+    ikLeveringTekenen();
+    return;
+  }
+  const r = L.regels[i];
+  if (r.overslaan) r.overslaan = false;
+  r.geteld = (r.geteld || 0) + 1;
+  ikBewaar();
+  ikLeveringTekenen();
+  const li = document.querySelector(`[data-ikregel="${i}"]`);
+  if (li) { li.classList.add("flits"); li.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  if (r.geteld > r.verwacht) melding(`Meer dan op de bon: ${ikGetal(r.geteld)} van ${ikGetal(r.verwacht)}`, true);
+}
+
+async function ikKoppel(i) {
+  const L = ik.levering;
+  const r = L.regels[i];
+  const ean = ik.wachtEan;
+  if (!r || !ean) return;
+  if (r.artikel_id) {
+    const { error } = await sb.from("artikelen").update({ ean }).eq("id", r.artikel_id);
+    if (error) {
+      melding(/artikelen_ean_uniek|duplicate/.test(error.message) ? "Deze barcode hoort al bij een ander artikel" : "Koppelen lukte niet: " + error.message, true);
+      return;
+    }
+    const a = ikArtikel(r.artikel_id);
+    if (a) a.ean = ean;
+  } else {
+    r.nieuwEan = ean;
+  }
+  ik.wachtEan = null;
+  r.geteld = (r.geteld || 0) + 1;
+  ikBewaar();
+  ikLeveringTekenen();
+  melding("Barcode gekoppeld");
+}
+
+async function ikLeveringBoeken() {
+  const L = ik.levering;
+  const actief = L.regels.filter((r) => !r.overslaan);
+  const open = actief.filter((r) => r.geteld == null);
+  if (open.length) {
+    if (!confirm(`${open.length} product${open.length === 1 ? " is" : "en zijn"} nog niet gecontroleerd. Het aantal van de bon overnemen en boeken?`)) return;
+    open.forEach((r) => (r.geteld = r.verwacht));
+  }
+  const verschil = actief.filter((r) => Math.abs(r.geteld - r.verwacht) > 1e-9);
+  if (verschil.length && !confirm(`${verschil.length} product${verschil.length === 1 ? " wijkt" : "en wijken"} af van de bon. Boeken met de getelde aantallen?`)) return;
+  const regels = actief.map((r) => ({
+    artikel_id: r.artikel_id,
+    nieuw: r.artikel_id ? null : {
+      soort: r.bulk ? "grondstof" : "handelsartikel", naam: r.nieuweNaam, ean: r.nieuwEan, btw: r.btw,
+      inhoud_tekst: ikInhoudTekst(r),
+      netto_gram: !r.bulk && /^(GRAM|GRA|GR|G)$/.test(r.inhoud_eenheid) ? r.inhoud : !r.bulk && /^(KILO|KG)$/.test(r.inhoud_eenheid) ? r.inhoud * 1000 : null,
+    },
+    leverancier_artnr: r.artnr, omschrijving: r.omschrijving, colli: r.colli, per_colli: r.per_colli,
+    besteld: r.verwacht * r.factor, ontvangen: r.geteld * r.factor,
+    inkoopprijs: r.ink_stuk != null ? Math.round((r.ink_stuk / r.factor) * 10000) / 10000 : null,
+    adviesprijs: r.advies_stuk != null ? Math.round((r.advies_stuk / r.factor) * 10000) / 10000 : null,
+    besteleenheid: r.bulk ? r.inhoud : r.per_colli,
+  }));
+  const knop = document.querySelector('[data-ik="lev-boeken"]');
+  if (knop) knop.disabled = true;
+  const { error } = await sb.rpc("inkoop_ontvangst_boeken", { p: {
+    leverancier: "Odin", referentie: L.referentie, afleverdatum: L.afleverdatum, bron: L.bron,
+    notitie: L.bestand ? "Bestand: " + L.bestand : null, regels,
+  } });
+  if (knop) knop.disabled = false;
+  if (error) { melding("Boeken lukte niet: " + error.message, true); ikBewaar(); return; }
+  const stuks = actief.filter((r) => !r.bulk).reduce((s, r) => s + r.geteld, 0);
+  melding(`Levering geboekt: ${actief.length} producten, ${ikGetal(stuks)} stuks`);
+  ik.levering = null;
+  ikBewaar();
+  await ikLaden();
+  ikLeveringTekenen();
+}
+
+// ------------------------------------------------------------ tellen
+
+function ikTellenTekenen() {
+  const el = $("ikTellen");
+  const zoekRes = ik.telZoek.trim().length >= 2 ? ikZoekArtikelen(ik.telZoek).slice(0, 12) : [];
+  const regels = ik.telling.map((t, i) => ({ t, i, a: ikArtikel(t.artikel_id) })).filter((x) => x.a);
+  el.innerHTML = `
+    <p class="ik-uitleg" style="margin:12px 0">Scan alles wat in het schap en het magazijn staat: elke scan telt één stuk. Bij <b>Telling opslaan</b> wordt de voorraad van de getelde producten gelijk gezet aan wat je geteld hebt. Producten die je niet scant, blijven zoals ze waren.</p>
+    <div class="ik-scan">
+      <input id="ikTelScan" inputmode="numeric" autocomplete="off" placeholder="Scan een product" aria-label="Barcode scannen">
+    </div>
+    ${ik.tellingWachtEan ? `<div class="ik-wacht">Barcode <b>${esc(ik.tellingWachtEan)}</b> is onbekend. Zoek het product en tik erop om de barcode te koppelen. <button type="button" class="btn stil" data-ik="telwacht-weg">Annuleren</button></div>` : ""}
+    <div class="ik-zoek"><input id="ikTelZoek" placeholder="Of zoek op naam (zonder barcode)" value="${esc(ik.telZoek)}" autocomplete="off"></div>
+    ${zoekRes.length ? `<div class="ik-resultaten">${zoekRes.map((a) => `<button type="button" data-ik="tel-kies" data-id="${a.id}">${esc(a.naam)} <span class="ik-sub" style="display:inline">${a.ean ? esc(a.ean) : "geen barcode"}</span></button>`).join("")}</div>` : ""}
+    <ul class="ik-regels" style="margin-top:12px">
+      ${regels.length ? regels.map(({ t, i, a }) => `
+        <li class="ik-regel" data-iktel="${i}">
+          <div><div class="ik-naam">${esc(a.naam)}</div>
+            <div class="ik-sub"><span>volgens systeem: ${ikGetal(ik.voorraad.get(a.id) ?? 0)} ${a.soort === "grondstof" || a.soort === "mengsel" ? "kg" : "st"}</span>${a.ean ? `<span class="mono">${esc(a.ean)}</span>` : ""}</div></div>
+          <div class="ik-tel">
+            <button type="button" data-ik="tmin" aria-label="Eén minder">−</button>
+            <input type="number" inputmode="decimal" min="0" step="any" value="${t.geteld}" data-ik-tteld="${i}" aria-label="Geteld">
+            <button type="button" data-ik="tplus" aria-label="Eén meer">+</button>
+          </div>
+          <div class="ik-acties"><button type="button" class="btn stil" data-ik="tweg">Uit telling halen</button></div>
+        </li>`).join("") : `<li class="taak-leeg">Nog niets geteld.</li>`}
+    </ul>
+    <div class="ik-voet">
+      ${regels.length ? `<button type="button" class="btn stil" data-ik="tel-leeg">Telling wissen</button>` : ""}
+      <span class="ruimte"></span>
+      <button type="button" class="btn ok" data-ik="tel-opslaan" ${regels.length ? "" : "disabled"}>Telling opslaan (${regels.length})</button>
+    </div>`;
+  if (document.activeElement !== $("ikTelZoek")) $("ikTelScan").focus({ preventScroll: true });
+}
+
+function ikZoekArtikelen(q) {
+  const woorden = q.toLowerCase().split(/\s+/).filter(Boolean);
+  return ik.artikelen.filter((a) => a.eigen_voorraad && woorden.every((w) => (a.naam + " " + (a.leverancier_artnr || "") + " " + (a.ean || "")).toLowerCase().includes(w)));
+}
+
+function ikTelOp(artikelId, n = 1) {
+  let t = ik.telling.find((x) => x.artikel_id === artikelId);
+  if (!t) { t = { artikel_id: artikelId, geteld: 0 }; ik.telling.unshift(t); }
+  t.geteld = Math.max(0, Math.round((Number(t.geteld) + n) * 1000) / 1000);
+  ikBewaar();
+}
+
+async function ikTellenScan(code) {
+  const a = ikOpEan(code);
+  if (!a) { ik.tellingWachtEan = code.replace(/\D/g, ""); melding("Onbekende barcode: zoek het product om te koppelen"); ikTellenTekenen(); $("ikTelZoek").focus(); return; }
+  ikTelOp(a.id, 1);
+  ikTellenTekenen();
+  melding(`${a.naam}: ${ikGetal(ik.telling.find((x) => x.artikel_id === a.id).geteld)}`);
+}
+
+async function ikTellingOpslaan() {
+  const regels = ik.telling.filter((t) => ikArtikel(t.artikel_id));
+  if (!regels.length) return;
+  if (!confirm(`De voorraad van ${regels.length} product${regels.length === 1 ? "" : "en"} wordt gelijk gezet aan de telling. Doorgaan?`)) return;
+  const { data, error } = await sb.rpc("voorraad_telling_boeken", { p: { regels: regels.map((t) => ({ artikel_id: t.artikel_id, geteld: Number(t.geteld) })) } });
+  if (error) { melding("Opslaan lukte niet: " + error.message, true); return; }
+  melding(`Telling opgeslagen (${data} correctie${data === 1 ? "" : "s"})`);
+  ik.telling = [];
+  ikBewaar();
+  await ikLaden();
+  ikTellenTekenen();
+}
+
+// ------------------------------------------------------------ Odin-artikelen
+
+function ikArtikelenTekenen() {
+  const el = $("ikArtikelen");
+  const odin = ik.artikelen.filter((a) => ik.odinId && a.leverancier_id === ik.odinId);
+  const zonder = odin.filter((a) => !a.ean).length;
+  let lijst = ik.zoek.trim() ? odin.filter((a) => ikZoekArtikelen(ik.zoek).includes(a)) : odin;
+  if (ik.artFilter === "zonder") lijst = lijst.filter((a) => !a.ean);
+  el.innerHTML = `
+    <div class="ik-zoek">
+      <input id="ikArtZoek" placeholder="Zoek op naam, artikelnummer of barcode" value="${esc(ik.zoek)}" autocomplete="off">
+      <nav class="tabs sm-tabs">
+        <button type="button" data-ik="artfilter" data-f="alle" aria-pressed="${ik.artFilter === "alle"}">Alle <span class="n">${odin.length}</span></button>
+        <button type="button" data-ik="artfilter" data-f="zonder" aria-pressed="${ik.artFilter === "zonder"}">Zonder barcode <span class="n">${zonder}</span></button>
+      </nav>
+    </div>
+    <p class="ik-uitleg" style="margin-bottom:10px">Klik in een naam of barcode om die te wijzigen; scannen in het barcodeveld kan ook. Barcodes worden ook gekoppeld als je ze bij een levering of telling scant.</p>
+    <div class="ik-tabelwrap"><table class="ik-tabel">
+      <thead><tr><th>Naam</th><th>Odin-nr</th><th>Barcode</th><th class="n">Per doos</th><th class="n">Inkoop</th><th class="n">Advies</th><th class="n">Voorraad</th></tr></thead>
+      <tbody>${lijst.slice(0, 400).map((a) => `
+        <tr data-id="${a.id}">
+          <td><input value="${esc(a.naam)}" data-ik-veld="naam" aria-label="Naam"></td>
+          <td class="n">${esc(a.leverancier_artnr || "")}</td>
+          <td><input class="ean" value="${esc(a.ean || "")}" data-ik-veld="ean" inputmode="numeric" placeholder="scan…" aria-label="Barcode"></td>
+          <td class="n">${a.besteleenheid != null ? ikGetal(a.besteleenheid) + (a.soort === "grondstof" ? " kg" : "") : ""}</td>
+          <td class="n">${ikEuro(a.inkoopprijs)}</td>
+          <td class="n">${ikEuro(a.adviesprijs)}</td>
+          <td class="n">${ikGetal(ik.voorraad.get(a.id) ?? 0)}${a.soort === "grondstof" ? " kg" : ""}</td>
+        </tr>`).join("")}</tbody>
+    </table></div>
+    ${lijst.length > 400 ? `<p class="ik-uitleg">Eerste 400 van ${lijst.length}; zoek om te verfijnen.</p>` : ""}`;
+}
+
+async function ikArtikelVeld(input) {
+  const id = input.closest("tr").dataset.id;
+  const a = ikArtikel(id);
+  const veld = input.dataset.ikVeld;
+  let waarde = input.value.trim();
+  if (veld === "ean") {
+    waarde = waarde.replace(/\D/g, "") || null;
+    if (waarde && !/^\d{8,14}$/.test(waarde)) { melding("Een barcode heeft 8 tot 14 cijfers", true); input.value = a.ean || ""; return; }
+  } else if (!waarde) { input.value = a.naam; return; }
+  if ((a[veld] || null) === waarde) return;
+  const { error } = await sb.from("artikelen").update({ [veld]: waarde }).eq("id", id);
+  if (error) {
+    melding(/ean_uniek|duplicate/.test(error.message) ? "Deze barcode hoort al bij een ander artikel" : "Opslaan lukte niet: " + error.message, true);
+    input.value = a[veld] || "";
+    return;
+  }
+  a[veld] = waarde;
+  melding("Opgeslagen");
+}
+
+// ------------------------------------------------------------ gebeurtenissen
+
+$("inkoop").addEventListener("click", async (e) => {
+  const tab = e.target.closest("[data-iktab]");
+  if (tab) { ik.tab = tab.dataset.iktab; ikTekenen(); return; }
+  const b = e.target.closest("[data-ik]");
+  if (!b) return;
+  const actie = b.dataset.ik;
+  const li = b.closest("[data-ikregel]");
+  const i = li ? Number(li.dataset.ikregel) : -1;
+  const r = i >= 0 && ik.levering ? ik.levering.regels[i] : null;
+  if (actie === "koppel" && r) { if (!e.target.closest("button, input")) await ikKoppel(i); return; }
+  if (r) {
+    if (actie === "plus") r.geteld = (r.geteld || 0) + 1;
+    if (actie === "min") r.geteld = Math.max(0, (r.geteld || 0) - 1);
+    if (actie === "klopt") r.geteld = r.verwacht;
+    if (actie === "nul") r.geteld = 0;
+    if (actie === "overslaan") r.overslaan = true;
+    if (actie === "terug") r.overslaan = false;
+    if (actie === "hernoem") { const n = prompt("Naam van het nieuwe artikel", r.nieuweNaam); if (n && n.trim()) r.nieuweNaam = n.trim(); }
+    ikBewaar();
+    if (["plus", "min"].includes(actie)) ikRegelBijwerken(i); else ikLeveringTekenen();
+    return;
+  }
+  if (actie === "wacht-weg") { ik.wachtEan = null; ikLeveringTekenen(); }
+  if (actie === "lev-annuleren" && confirm("Deze afleverbon weggooien? Er is nog niets geboekt.")) { ik.levering = null; ik.wachtEan = null; ikBewaar(); ikLeveringTekenen(); }
+  if (actie === "lev-alles") { ik.levering.regels.forEach((x) => { if (!x.overslaan && x.geteld == null) x.geteld = x.verwacht; }); ikBewaar(); ikLeveringTekenen(); }
+  if (actie === "lev-boeken") await ikLeveringBoeken();
+
+  const tli = b.closest("[data-iktel]");
+  if (tli) {
+    const t = ik.telling[Number(tli.dataset.iktel)];
+    if (actie === "tplus") ikTelOp(t.artikel_id, 1);
+    if (actie === "tmin") ikTelOp(t.artikel_id, -1);
+    if (actie === "tweg") ik.telling.splice(Number(tli.dataset.iktel), 1);
+    ikBewaar(); ikTellenTekenen(); return;
+  }
+  if (actie === "tel-kies") {
+    const id = b.dataset.id;
+    if (ik.tellingWachtEan) {
+      const { error } = await sb.from("artikelen").update({ ean: ik.tellingWachtEan }).eq("id", id);
+      if (error) { melding(/ean_uniek|duplicate/.test(error.message) ? "Deze barcode hoort al bij een ander artikel" : "Koppelen lukte niet: " + error.message, true); return; }
+      ikArtikel(id).ean = ik.tellingWachtEan;
+      ik.tellingWachtEan = null;
+      melding("Barcode gekoppeld");
+    }
+    ikTelOp(id, 1); ik.telZoek = ""; ikTellenTekenen(); return;
+  }
+  if (actie === "telwacht-weg") { ik.tellingWachtEan = null; ikTellenTekenen(); }
+  if (actie === "tel-leeg" && confirm("Alle getelde aantallen wissen?")) { ik.telling = []; ikBewaar(); ikTellenTekenen(); }
+  if (actie === "tel-opslaan") await ikTellingOpslaan();
+  if (actie === "artfilter") { ik.artFilter = b.dataset.f; ikArtikelenTekenen(); }
+});
+
+$("inkoop").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.dataset.ik === "koppel") { e.preventDefault(); ikKoppel(Number(e.target.dataset.ikregel)); return; }
+  if (e.key !== "Enter") return;
+  if (e.target.id === "ikScan") { e.preventDefault(); const v = e.target.value.trim(); e.target.value = ""; if (v) ikLeveringScan(v); }
+  if (e.target.id === "ikTelScan") { e.preventDefault(); const v = e.target.value.trim(); e.target.value = ""; if (v) ikTellenScan(v); }
+  if (e.target.dataset.ikVeld) { e.preventDefault(); e.target.blur(); }
+});
+
+$("inkoop").addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.ikTel != null && ik.levering) {
+    const r = ik.levering.regels[Number(t.dataset.ikTel)];
+    r.geteld = t.value === "" ? null : Math.max(0, Number(t.value.replace(",", ".")) || 0);
+    const li = t.closest(".ik-regel");
+    li.classList.remove("ok", "minder", "meer");
+    const st = ikRegelStatus(r);
+    if (st) li.classList.add(st);
+    ikBewaar();
+  }
+  if (t.dataset.ikTteld != null) {
+    const x = ik.telling[Number(t.dataset.ikTteld)];
+    x.geteld = Math.max(0, Number(t.value.replace(",", ".")) || 0);
+    ikBewaar();
+  }
+  if (t.id === "ikTelZoek") {
+    ik.telZoek = t.value;
+    const pos = t.selectionStart;
+    ikTellenTekenen();
+    const z = $("ikTelZoek"); z.focus(); z.setSelectionRange(pos, pos);
+  }
+  if (t.id === "ikArtZoek") {
+    ik.zoek = t.value;
+    clearTimeout(ikArtikelenTekenen.t);
+    ikArtikelenTekenen.t = setTimeout(() => {
+      const pos = $("ikArtZoek").selectionStart;
+      ikArtikelenTekenen();
+      const z = $("ikArtZoek"); z.focus(); z.setSelectionRange(pos, pos);
+    }, 200);
+  }
+});
+
+$("inkoop").addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.id === "ikBestand" || t.id === "ikCamera") { ikBestandenGekozen(t.files); t.value = ""; return; }
+  if (t.dataset.ikTel != null) ikLeveringTekenen();
+  if (t.dataset.ikVeld) ikArtikelVeld(t);
+});
+
+// Slepen van een PDF op het uploadvak.
+$("inkoop").addEventListener("dragover", (e) => { const d = e.target.closest("#ikDrop"); if (d) { e.preventDefault(); d.classList.add("over"); } });
+$("inkoop").addEventListener("dragleave", (e) => { const d = e.target.closest("#ikDrop"); if (d) d.classList.remove("over"); });
+$("inkoop").addEventListener("drop", (e) => { const d = e.target.closest("#ikDrop"); if (d) { e.preventDefault(); d.classList.remove("over"); ikBestandenGekozen(e.dataTransfer.files); } });
+
+// Een scanner die "typt" terwijl er geen invoerveld actief is: toch opvangen.
+let ikBuffer = "", ikBufferTijd = 0;
+document.addEventListener("keydown", (e) => {
+  if ($("inkoop").hidden) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+  const nu = Date.now();
+  if (nu - ikBufferTijd > 80) ikBuffer = "";
+  ikBufferTijd = nu;
+  if (/^\d$/.test(e.key)) { ikBuffer += e.key; return; }
+  if (e.key === "Enter" && ikBuffer.length >= 8) {
+    const code = ikBuffer; ikBuffer = "";
+    e.preventDefault();
+    if (ik.tab === "levering") ikLeveringScan(code);
+    else if (ik.tab === "tellen") ikTellenScan(code);
+  }
+});
 
 sb.auth.getSession().then(({ data }) => (data.session ? toonApp(data.session) : toonLogin()));
 </script>
